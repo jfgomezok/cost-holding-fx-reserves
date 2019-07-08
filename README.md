@@ -27,17 +27,15 @@ this screen, and then clicking “Download ZIP”.
     Version](https://www.rstudio.com/products/rstudio/download/)
 
   - Api key of the Federal Reserve Bank of San Louis, available at:
-    <https://research.stlouisfed.org/docs/api/api_key.html>
-
-## Install Dependencies
-
-  - Run `Load_packages.R` to install and load the required packages.
+    <https://research.stlouisfed.org/docs/api/api_key.html>. Write it in
+    line line 16 of `stlouis_api_key.R` script.
 
 ## Directory structure
 
-1.  `Data Generator.R` will download the data from public warehouses
-    (i.e IMF, WB, St.Louis FED, S\&P), save it in ‘Inputs’, merge it and
-    build two panels saved in ‘Outputs’:
+1.  `Data Generator.R` will install and load the required packages,
+    download the data from public warehouses (i.e IMF, WB, St.Louis FED,
+    S\&P), save it in ‘Inputs’, merge it and build two panels saved in
+    ‘Outputs’:
     
       - self\_insurance\_db.csv is the section 3 master data base
         (‘DB’).
@@ -57,7 +55,8 @@ this screen, and then clicking “Download ZIP”.
 4.  `Self_Insurance_Regressions.Rmd` load the section 3 master DB and
     performs the regressions.
 
-5.  `Law_Model_analysis.Rmd` load the section 4 master DB and \[…\]
+5.  `Law_Model_analysis.Rmd` load the section 4 master DB and perform
+    the analytics.
 
 ## Contributing
 
