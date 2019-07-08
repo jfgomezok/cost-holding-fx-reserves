@@ -10,7 +10,7 @@
 # Session Data files
 .RData
 README.Rmd
-Librerias/stlouis_api_key.R
+stlouis_api_key.R
 
 
 # Example code in package build process
