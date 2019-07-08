@@ -3,12 +3,14 @@
 .Rapp.history
 *.html
 *.dta
+*.csv
 /Outputs/*
 /raw_data/*
 
 # Session Data files
 .RData
 README.Rmd
+Librerias/stlouis_api_key.R
 
 
 # Example code in package build process
