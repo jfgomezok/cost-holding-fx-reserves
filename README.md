@@ -15,9 +15,12 @@ Available at:
 ## Installing this repository:
 
 Git users are welcome to fork this repository or clone it for local use.
+
 Non-Git users will probably find it easiest to download the zip file by
 clicking on the green Clone or download button on the right hand side of
-this screen, and then clicking “Download ZIP”.
+this screen, and then clicking “Download ZIP”. Once downloaded, always
+start by opening the ‘Rproj’ file (in this case:
+cost-holding-fx-reserves.Rproj).
 
 ## Required Software:
 
@@ -27,8 +30,11 @@ this screen, and then clicking “Download ZIP”.
     Version](https://www.rstudio.com/products/rstudio/download/)
 
   - Api key of the Federal Reserve Bank of San Louis, available at:
-    <https://research.stlouisfed.org/docs/api/api_key.html>. Write it in
-    line line 16 of `stlouis_api_key.R` script.
+    <https://research.stlouisfed.org/docs/api/api_key.html>.
+
+  - Once in hand with your personal Api key, write it in line 6 of
+    `sample_stlouis_api_key.R` and then change its name to
+    `stlouis_api_key.R`.
 
 ## Directory structure
 

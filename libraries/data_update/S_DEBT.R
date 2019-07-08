@@ -90,7 +90,7 @@ debt2 <- debt %>%
 #   geom_point()
 
 
-countries.ely.EL <- read.csv2("Inputs/countries.csv")
+countries.ely.EL <- read.csv2("inputs/countries.csv")
 colnames(countries.ely.EL) <- c("ifscode", "country_name_ifs", "wbcode3")
 countries.ely <- as.character(unique(countries.ely.EL$wbcode3))
 

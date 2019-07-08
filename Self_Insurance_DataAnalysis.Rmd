@@ -18,7 +18,7 @@ options(    tikzDefaultEngine = "xetex",   # Accent in tables
 
 Sys.setlocale("LC_ALL","Spanish")
 
-source("Librerias/Load_packages.R")
+source("libraries/load_packages.R")
 
 fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
@@ -53,7 +53,7 @@ caption {
 
 ```{r Carga de Datos, echo=FALSE, message=FALSE, warning=FALSE}
 
-base.paper <- read.csv2("Outputs/self_insurance_db.csv")
+base.paper <- read.csv2("outputs/self_insurance_db.csv")
 base.paper$year <- as.numeric(base.paper$year)
 base.paper$rating <- as.numeric(base.paper$rating)
 base.paper$riskaversion <- as.numeric(base.paper$riskaversion)
@@ -75,8 +75,8 @@ base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
 stargazer(base.paper[,c(5:12,22:25)],
           type =  "text",
           iqr =   FALSE,
-          title=  "Master Data Base, with NAs"
-          # out=    "Outputs/Data_Analysis_Table1.html"
+          title=  "Master Data Base, with NAs",
+          out=    "Outputs/Data_Analysis_Table1.html"
           )
 
 
@@ -303,7 +303,7 @@ Detail public debt with private creditors:
 
 debt_ratio <- base.paper %>%
   select(wbcode3, date, D_Y) %>%
-  filter( months(date, abbreviate=TRUE) == "dic" ) %>%
+  filter( month(date) == 12 ) %>%
   filter( date > "2013-01-01" ) %>%
   mutate(D_Y = round(D_Y *100,1)) %>%
   mutate(date= format.Date(date, "%b-%y"))
@@ -331,7 +331,7 @@ kable(debt_ratio1) %>%
 
 ratios <- all_period %>%
   select(wbcode3, date, R_Y , PuD_Y ) %>%
-  filter( months(date, abbreviate=TRUE) == "dic") %>%
+  filter( month(date) == 12) %>%
   mutate(D_Y = PuD_Y *100)%>%
   mutate(R_Y = R_Y *100)%>%
   mutate(date = as.integer(format(date, "%Y")))%>%

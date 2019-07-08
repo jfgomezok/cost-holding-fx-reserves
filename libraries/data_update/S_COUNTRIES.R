@@ -10,7 +10,7 @@ library(tidyr)
 #  all countries, all indicators.
 
 
-metadata <- read.csv("Inputs/Metadata_IFS.csv")
+metadata <- read.csv("inputs/Metadata_IFS.csv")
 
 metadata <- subset (metadata, Metadata.Attribute %in% c("Country Code",
                                                         "Country Full Name",
@@ -26,6 +26,6 @@ metadata <- metadata[c(4,7,8)]
 
 metadata <- spread(metadata, Metadata.Attribute, Metadata.Value )[c(2:8)]
 
-write.csv2(metadata, file="Inputs/imfcountriesmetadata.csv", row.names=FALSE)
+write.csv2(metadata, file="inputs/imfcountriesmetadata.csv", row.names=FALSE)
 
 

@@ -11,7 +11,7 @@ options(    tikzDefaultEngine = "xetex",   # Acentos en tablas
 
 Sys.setlocale("LC_ALL","Spanish")
 
-source("Librerias/Load_packages.R")
+source("libraries/load_packages.R")
 
 fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
@@ -24,7 +24,7 @@ fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 ```{r carga de datos}
 
 #lectura de la data ifm
-base_mensual <- read.csv2("Outputs/law_db.csv")
+base_mensual <- read.csv2("outputs/law_db.csv")
 base_mensual$date <- as.Date(base_mensual$date)
 # str(base_mensual)
 
@@ -116,7 +116,7 @@ boxplot_chart <- ggplot(baseaanual_gdp_gather, aes(x=wbcode3, y=value, fill=Meth
   labs(x="")+
   theme(legend.position="bottom")
 
-  ggsave("Outputs/law_boxplot_chart.png", width = 7, height = 4)
+  ggsave("outputs/law_boxplot_chart.png", width = 7, height = 4)
 
 
 
@@ -506,6 +506,5 @@ plot_grid(p.arg,p.bra, p.kor, p.mex, p.rus, p.tur)
 ```
 
 
-```
 
 

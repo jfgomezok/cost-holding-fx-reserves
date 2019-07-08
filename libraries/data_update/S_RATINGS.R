@@ -1,6 +1,6 @@
-
-source("Librerias/Load_packages.R")
-
+#################################################################################
+######################   S&P RATINGS  ###########################################
+#################################################################################
 
 
 url <- read_html("https://www.capitaliq.com/CIQDotNet/CreditResearch/RenderArticle.aspx?articleId=2190292&SctArtId=469442&from=CM&nsl_code=LIME&sourceObjectId=10935310&sourceRevId=1&fee_ind=N&exp_date=20290407-15:53:53")
@@ -136,7 +136,7 @@ new_db2 <- na.omit(new_db2)
 ####################################################
 
 
-spy_equiv <- read.csv2("Inputs/spy_country_equiv.csv")
+spy_equiv <- read.csv2("inputs/spy_country_equiv.csv")
 
 new_db3 <- merge(new_db2, spy_equiv, by="country")
 

@@ -21,7 +21,7 @@ options(    tikzDefaultEngine = "xetex",   # Acentos en tablas
 
 Sys.setlocale("LC_ALL","Spanish")
 
-source("Librerias/Load_packages.R")
+source("libraries/load_packages.R")
 
 fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
@@ -35,7 +35,7 @@ fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 ```{r Carga de Datos, echo=FALSE, message=FALSE, warning=FALSE}
 
 
-base.paper <- read.csv2("Outputs/self_insurance_db.csv")
+base.paper <- read.csv2("outputs/self_insurance_db.csv")
 base.paper$year <- as.numeric(base.paper$year)
 base.paper$rating <- as.numeric(base.paper$rating)
 base.paper$riskaversion <- as.numeric(base.paper$riskaversion)

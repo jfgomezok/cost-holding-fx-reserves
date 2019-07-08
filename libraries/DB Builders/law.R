@@ -2,22 +2,7 @@
 
 ######################################################################
 #####   L E A N I N G    A G A I N S T     T H E     W I N D    ######
-#################        S E T U P      ##############################
 ######################################################################
-
-
-rm(list = ls()) # limpiar memoria
-
-options(    tikzDefaultEngine = "xetex",   # Acentos en tablas
-            java.parameters = "-Xmx8000m", # Evitar notación científica
-            knitr.kable.NA = 's/d')
-
-Sys.setlocale("LC_ALL","Spanish")
-
-source("Librerias/Load_packages.R")
-
-fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
-
 
 
 
