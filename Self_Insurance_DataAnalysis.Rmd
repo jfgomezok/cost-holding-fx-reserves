@@ -1,0 +1,440 @@
+---
+title: "Regression Outputs"
+author: "JFG"
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r setup, include=FALSE, echo=FALSE}
+
+rm(list = ls()) 
+
+options(    tikzDefaultEngine = "xetex",   # Accent in tables
+            java.parameters = "-Xmx8000m", # Avoid  scientific notation
+            knitr.kable.NA = 's/d')
+
+Sys.setlocale("LC_ALL","Spanish")
+
+source("Librerias/Load_packages.R")
+
+fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
+
+
+```
+
+## Data Analysis
+
+We gather data from:
+
+1. WB --> JPMorgan EMBI and Debt
+2. IMF --> Reserves
+3. S&P --> Credit Ratings
+4. St.Louis FED --> US10y and Risk Avertion
+
+
+```{r include=FALSE, results="asis"}
+cat("
+<style>
+caption {
+      color: black;
+      font-weight: bold;
+      font-size: 1.0em;
+      text-align: center;
+    }
+</style>
+")
+```
+
+
+ 
+
+```{r Carga de Datos, echo=FALSE, message=FALSE, warning=FALSE}
+
+base.paper <- read.csv2("Outputs/self_insurance_db.csv")
+base.paper$year <- as.numeric(base.paper$year)
+base.paper$rating <- as.numeric(base.paper$rating)
+base.paper$riskaversion <- as.numeric(base.paper$riskaversion)
+base.paper$date  <- as.Date(base.paper$date)
+# str(base.paper)
+
+base.paper <- base.paper[,-c(1,2,5)]
+base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
+
+```
+
+
+## Statistics of the master data base:
+
+```{r ESTADISTICOS, message=FALSE, warning=FALSE, include=FALSE}
+
+
+
+stargazer(base.paper[,c(5:12,22:25)],
+          type =  "text",
+          iqr =   FALSE,
+          title=  "Master Data Base, with NAs"
+          # out=    "Outputs/Data_Analysis_Table1.html"
+          )
+
+
+```
+
+
+## A look to Argentina's public debt
+
+```{r TABLA DEUDA ARGENTINA, message=FALSE, warning=FALSE, include=FALSE}
+
+base.paper %>%
+  filter( wbcode3 == "ARG", date >= "2010-01-01" ) %>%
+  filter (months(date) == "diciembre") %>%
+  select ( year, public_debt, PuD_Y) %>%
+  mutate (public_debt = round(public_debt,1)) %>%
+  # mutate (private_debt = round(private_debt,1)) %>%
+  # mutate (total_debt = round(total_debt,1)) %>%
+  mutate( PuD_Y = percent(PuD_Y)) %>%
+  # mutate( PrD_Y = percent(PrD_Y)) %>%
+  # mutate( D_Y = percent(D_Y)) %>%
+  kable(.,
+        col.names = c("Year", "US$ Bn", "% GDP"),
+        caption = "Argentina Exernal Public Debt with private Creditors") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                full_width = F,
+                position = "left")
+  
+
+
+
+```
+
+
+
+
+## TIME TO FILTER!
+
+
+We filter the master data base with the following date-criteria:
+
+1) Long Span: 2000 a 2017 (2008 & 2009 excluded due to the international crisis)
+2) Pre-Crisis: 2000 a 2007
+3) Post-Crisis: 2010 a 2017
+
+
+Then, we clean the data by the following filters:
+
+1) Credit Ratings > 3: To avoid default-spreads
+2) Spreads < 1000: To avoid distress countries
+3) Exclude China and Lebanon: due to disproportionate reserve and debt ratios.
+
+
+Statistics of the cleaned-data:
+
+
+
+```{r definicion de periodos, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+all_period <- subset (base.paper, year>=2000 &  year!=2008 &  year!=2009 & year<=2017
+                      & rating>3
+                      & spread< 1000
+                      & !wbcode3 %in% c("LBN", "CHN")
+                      & lreserves_1 != "NA" &  lpublicdebt != "NA")
+
+pre_crisis <- subset (base.paper, year>=2000 & year<=2007  
+                          & rating>3 
+                          & spread< 1000
+                          & !wbcode3 %in% c("LBN", "CHN")
+                          & lreserves_1 != "NA" & lpublicdebt != "NA")
+
+post_crisis <- subset (base.paper, year>=2010 
+                        & rating>3 
+                        & spread< 1000
+                        & !wbcode3 %in% c("LBN", "CHN")
+                        & lreserves_1 != "NA" & lpublicdebt != "NA")
+
+
+
+stargazer(all_period[,c(5:12,22:25)],
+          type = "text",
+          iqr = FALSE,
+          title="Long Span (unbalanced):2000-Present (2008&2009 excluded)"
+          )
+
+# 
+# stargazer(pre_crisis[,c(5:12,22:25)],
+#           type = "text",
+#           iqr = FALSE,
+#           title="Pre crisis (unbalanced): 2000-2007"
+#           )
+# 
+# 
+# stargazer(post_crisis[,c(5:12,22:25)],
+#           type = "text",
+#           iqr = FALSE,
+#           title="Post crisis (unbalanced): 2010-present"
+#           )
+
+
+
+```
+
+
+
+
+## KEY HISTOGRAMS
+
+
+```{r Histogramas, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+h1a <- ggplot(base.paper, aes(spread))+
+  geom_histogram()+
+  geom_vline(aes(xintercept=mean(spread, na.rm=T)),
+            color="blue", linetype="dashed", size=1)+
+  ggtitle("Histogram: Spread\nMaster Data")+
+  labs(x = "Sovereign Spread")
+
+h1b <- ggplot(all_period, aes(spread))+
+  geom_histogram()+
+  geom_vline(aes(xintercept=mean(spread, na.rm=T)),
+            color="blue", linetype="dashed", size=1)+
+  ggtitle("Histogram: Spread\nWith Filters")+
+  labs(x = "Sovereign Spread")
+
+
+grid.arrange(h1a, h1b, nrow = 1)
+
+h2a <- ggplot(base.paper, aes(R_Y))+
+  geom_histogram()+
+  geom_vline(aes(xintercept=mean(R_Y, na.rm=T)),
+            color="blue", linetype="dashed", size=1)+
+  ggtitle("Histogram: Reserve Ratio\nMaster Data")+
+  labs(x = "Reserve Ratio")
+
+
+h2b <- ggplot(all_period, aes(R_Y))+
+  geom_histogram()+
+  geom_vline(aes(xintercept=mean(R_Y, na.rm=T)),
+            color="blue", linetype="dashed", size=1)+
+  ggtitle("Histogram: Reserve Ratio\nWith Filters")+
+  labs(x = "Reserve Ratio")
+
+grid.arrange(h2a, h2b, nrow = 1)
+
+
+h3a <- ggplot(base.paper, aes(PuD_Y))+
+  geom_histogram()+
+  geom_vline(aes(xintercept=mean(PuD_Y, na.rm=T)),
+            color="blue", linetype="dashed", size=1)+
+  ggtitle("Histogram: Public Debt Ratio\nMaster Data")+
+  labs(x = "Debt Ratio")
+
+
+h3b <- ggplot(all_period, aes(PuD_Y))+
+  geom_histogram()+
+  geom_vline(aes(xintercept=mean(PuD_Y, na.rm=T)),
+            color="blue", linetype="dashed", size=1)+
+  ggtitle("Histogram: Public Debt Ratio\nWith Filters")+
+  labs(x = "Debt Ratio")
+  
+grid.arrange(h3a, h3b, nrow = 1)
+
+```
+
+
+
+
+
+
+
+## TIME SPANS AND COUNTIRES
+
+
+```{r Countries and Period Covered, echo=FALSE, warning=FALSE}
+
+
+
+country.list <- as.list(unique(all_period$country_name_wb))
+resume2 <- data.frame()
+
+for (j in country.list) {
+  
+  # j <- "ARG"
+  
+  df  <- subset(all_period, country_name_wb == j)
+  
+  obs <- nrow(df)
+  begins <- min(df$date)
+  ends <- max(df$date)
+  
+  resume2.j <- data.frame(j, obs, begins, ends)
+  
+  resume2 <- rbind(resume2, resume2.j)
+  
+}
+
+colnames(resume2)[1] <- "Country"
+
+
+
+kable(resume2,
+      col.names = c("Country", "obs", "Begins", "Ends"),
+      caption="Countries and Period Covered") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                full_width = F,
+                position = "left")
+  
+
+
+
+
+```
+
+
+
+
+
+Detail public debt with private creditors:
+
+
+```{r Ratios de deuda publica, echo=FALSE, message=FALSE, warning=FALSE}
+
+debt_ratio <- base.paper %>%
+  select(wbcode3, date, D_Y) %>%
+  filter( months(date, abbreviate=TRUE) == "dic" ) %>%
+  filter( date > "2013-01-01" ) %>%
+  mutate(D_Y = round(D_Y *100,1)) %>%
+  mutate(date= format.Date(date, "%b-%y"))
+
+debt_ratio1 <- spread(debt_ratio, date, D_Y)
+
+
+kable(debt_ratio1) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                position = "left")
+
+
+```
+
+
+
+## HOW DOES RATIOS OF DEBT AND RESERVES LOOK LIKE?
+
+
+
+```{r Scatter de ratios, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+
+
+ratios <- all_period %>%
+  select(wbcode3, date, R_Y , PuD_Y ) %>%
+  filter( months(date, abbreviate=TRUE) == "dic") %>%
+  mutate(D_Y = PuD_Y *100)%>%
+  mutate(R_Y = R_Y *100)%>%
+  mutate(date = as.integer(format(date, "%Y")))%>%
+  na.omit()
+
+
+# str(ratios)
+max_x <- max(ratios$D_Y,  na.rm = TRUE)
+max_y <- max(ratios$R_Y, na.rm = TRUE)
+
+max <- round(max(max_x, max_y),0)+5
+
+# str(ratios)
+
+# ggplot(ratios, aes(D_Y, R_Y, size=0.5, color=wbcode3))+
+#   geom_point(alpha = 0.7)+
+#   geom_text(aes(label=ifelse(wbcode3=="ARG","ARG",'')), hjust=0, vjust=0)+
+#   geom_abline(aes(slope=1, intercept=0))+
+#   scale_x_continuous(name="Debt Ratio",limits=c(0,max)) +
+#   scale_y_continuous(name="Reserve Ratio",limits=c(0, max))+
+#   ggtitle("Ratios de Reservas y Deuda a diciembre de cada año",
+#           subtitle = 'Year: {frame_time}')+
+#   transition_time(date)+
+#   ease_aes('linear')+
+#   shadow_wake(wake_length = 0.1, alpha = FALSE)
+
+
+
+ggplot(ratios, aes(D_Y, R_Y, color=wbcode3))+
+  geom_point(alpha = 0.7)+
+  # geom_text(aes(label=ifelse(wbcode3=="ARG","ARG",'')), hjust=0, vjust=0)+
+  geom_abline(aes(slope=1, intercept=0))+
+  scale_x_continuous(name="Debt Ratio",limits=c(0,max)) +
+  scale_y_continuous(name="Reserve Ratio",limits=c(0, max))+
+  ggtitle("Ratios de Reservas y Deuda a diciembre de cada año")
+
+
+
+```
+
+
+
+
+## DEBT IS HIGHER THAN RESERVES, RIGHT?
+
+
+```{r Excess Debt, echo=FALSE,  warning=FALSE, results="asis"}
+
+
+country.list <- as.list(unique(all_period$country_name_wb))
+resume <- data.frame()
+
+for (j in country.list) {
+  
+  # j <- "Argentina"
+  
+  df  <- subset(all_period, country_name_wb == j)
+  
+  mean.reserves <- mean(df$R_Y, na.rm=TRUE)
+  mean.debt <- mean(df$PuD_Y, na.rm=TRUE)
+  
+  resume.j <- data.frame(j, mean.reserves, mean.debt)
+  
+  resume <- rbind(resume, resume.j)
+  
+}
+
+colnames(resume)[1] <- "Country"
+
+resume <- resume %>%
+  mutate(excess.debt.bps = round((mean.debt - mean.reserves)*10000)) %>%
+  arrange(desc(excess.debt.bps))
+  
+
+resume$mean.reserves <- percent(resume$mean.reserves)
+resume$mean.debt <- percent(resume$mean.debt)
+# str(resume)
+
+for (i in 1:dim(resume)[1]) {
+  
+  if (is.na(resume$excess.debt.bps[i]))
+  {resume$Condition[i] <- NA}
+  else
+  if (resume$excess.debt.bps[i] > 0) 
+  {resume$Condition[i] <- "As Expected"}
+  else {resume$Condition[i] <- "Not as Expected"}
+} 
+
+kable(resume,
+      col.names = c("Country", "Reserve Ratio", "Debt Ratio", "Excess Debt (in bps)", "Condition"),
+      caption = "Average Ratios and Excess Debt (2000-2017)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                full_width = F,
+                position = "left")
+
+# 
+# %>%
+#   scroll_box(width = "800px", height = "250px")
+#   
+
+
+
+```
+
+
+

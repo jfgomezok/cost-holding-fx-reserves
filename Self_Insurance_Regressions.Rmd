@@ -1,0 +1,378 @@
+---
+title: "Regression Outputs"
+author: "JFG"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+rm(list = ls()) # limpiar memoria
+
+options(    tikzDefaultEngine = "xetex",   # Acentos en tablas
+            java.parameters = "-Xmx8000m", # Evitar notación científica
+            knitr.kable.NA = 's/d')
+
+Sys.setlocale("LC_ALL","Spanish")
+
+source("Librerias/Load_packages.R")
+
+fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
+
+# pacman
+
+```
+
+
+
+
+```{r Carga de Datos, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+base.paper <- read.csv2("Outputs/self_insurance_db.csv")
+base.paper$year <- as.numeric(base.paper$year)
+base.paper$rating <- as.numeric(base.paper$rating)
+base.paper$riskaversion <- as.numeric(base.paper$riskaversion)
+base.paper$date  <- as.Date(base.paper$date)
+# str(base.paper)
+
+base.paper <- base.paper[,-c(1,2,5)]
+# names(base.paper)
+base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
+base.paper <- base.paper[,c(1:8,12,14:18,22:24)]
+
+```
+
+
+
+```{r NOMBRE A LAS FILAS, echo=FALSE, message=FALSE, warning=FALSE}
+
+# PONGO LOS ROW.NAMES PARA QUE LOS AVPLOTS MUESTRES LOS OUTLIERS
+base.paper <- base.paper %>%
+  dplyr::mutate(
+    id = sprintf("%s:%s"  , wbcode3 , format.Date(date, "%b-%y")))
+row.names(base.paper) <- base.paper$id  
+
+```
+
+
+```{r include=FALSE}
+
+#cruzo con stata que me de igual la cantidad de observaciones: check!
+
+# names(base.paper)
+stats_general <- stargazer(base.paper[,c(5:9,15:17)],
+          type="html",
+          out="Outputs/Self_insurance_Stats_Full_Sample.html",
+          title="Summary Statistics: Full Sample")
+
+
+```
+
+
+
+
+```{r filtros, message=FALSE, warning=FALSE, include=FALSE}
+
+clean_base <- subset (na.omit(base.paper), year!=2008 &  year!=2009 
+                      & rating>3
+                      & spread<= 1000
+                      & wbcode3 != "CHN"
+                      & wbcode3 != "LBN")
+
+
+sum_stats <- stargazer(clean_base[,c(5:9,15:17)],
+          type="html",
+          out="Outputs/Self_Insurance_Stats_With_Filters.html",
+          title="Summary Statistics: With Filters")
+
+```
+
+
+
+
+```{r Countries and Period Covered, echo=FALSE, warning=FALSE}
+
+
+
+country.list <- as.list(unique(clean_base$country_name_wb))
+resume2 <- data.frame()
+
+for (j in country.list) {
+  
+  # j <- "ARG"
+  
+  df  <- subset(clean_base, country_name_wb == j)
+  
+  obs <- nrow(df)
+  begins <- min(df$date)
+  ends <- max(df$date)
+  
+  resume2.j <- data.frame(j, obs, begins, ends)
+  
+  resume2 <- rbind(resume2, resume2.j)
+  
+}
+
+colnames(resume2)[1] <- "Country"
+
+
+
+countries_dates <- kable(resume2, "html",
+      col.names = c("Country", "obs", "Begins", "Ends"),
+      caption="Countries and Period Covered") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                full_width = F,
+                position = "left")
+
+readr::write_file(countries_dates, "Outputs/Self_Insurance_Countries_Dates.html")
+  
+
+
+
+
+```
+
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
+
+
+
+## Efecto directo, controlado por ratings
+R1 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base)
+
+## Idem anterior, sin deuda privada
+R2 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y 
+           | country_name_wb| 0 | date,
+           data = clean_base)
+
+## Efecto de las reservas en el rating soberano
+R3 <- felm(lrating ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base)
+
+## Efecto directo, sin controlar por rating
+R4 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base)
+
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
+
+###### ¿Cambia la incidencia relativa de reservas vs. deuda?
+
+## ANTES DE LA CRISIS:
+
+R5 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base, subset = year<=2007)
+
+R6 <- felm(lrating ~ lriskaversion +  lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base, subset = year<=2007)
+
+
+R7 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base, subset = year<=2007)
+
+
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
+
+
+## DESPUES DE LA CRISIS:
+
+
+R8 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base, subset = year>=2010)
+
+R9 <- felm(lrating ~ lriskaversion +  lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base, subset = year>=2010)
+
+
+R10 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
+           | country_name_wb| 0 | date,
+           data = clean_base, subset = year>=2010)
+
+
+
+```
+
+
+```{r salidas1, message=FALSE, warning=FALSE, include=FALSE}
+
+
+salida1 <- stargazer(R1, R2, R4, R3,
+          type="html",
+          dep.var.labels=c("log(spread)","log(rating)"),
+          covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
+                             "log(International Rate)",
+                             "Reserve Ratio","Sovereign Debt Ratio",
+                             "Private Debt Ratio"),
+          out="Outputs/Self_Insurance_Table1.html",
+          title="Elasticities of emerging market spreads to reserves and debt stocks: full sample",
+          no.space=FALSE,
+          digits=3,
+          align=TRUE)
+
+
+
+```
+
+
+```{r salidas2, message=FALSE, warning=FALSE, include=FALSE}
+
+
+salida2 <- stargazer(R5, R7, R6,
+          type="html",
+          dep.var.labels=c("log(spread)","log(rating)"),
+          covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
+                             "log(International Rate)",
+                             "Reserve Ratio","Sovereign Debt Ratio",
+                             "Private Debt Ratio"),
+          out="Outputs/Self_Insurance_Table2.html",
+          title="Elasticities of emerging market spreads to reserves and debt stocks: Before International Financial Crisis",
+          no.space=FALSE,
+          digits=3,
+          align=TRUE)
+
+
+
+```
+
+
+```{r salidas3, message=FALSE, warning=FALSE, include=FALSE}
+
+
+salida2 <- stargazer(R8, R10, R9,
+          type="html",
+          dep.var.labels=c("log(spread)","log(rating)"),
+          covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
+                             "log(International Rate)",
+                             "Reserve Ratio","Sovereign Debt Ratio",
+                             "Private Debt Ratio"),
+          out="Outputs/Self_Insurance_Table3.html",
+          title="Elasticities of emerging market spreads to reserves and debt stocks: After International Financial Crisis",
+          no.space=FALSE,
+          digits=3,
+          align=TRUE)
+
+
+
+```
+
+
+```{r wald test, include=FALSE}
+
+# 
+# 
+#   
+  
+test1 <- as.data.frame(t(round(waldtest(R1, ~PuD_Y - R_Y)[1:2],6)))
+test2 <- as.data.frame(t(round(waldtest(R2, ~PuD_Y - R_Y)[1:2],6)))
+test3 <- as.data.frame(t(round(waldtest(R3, ~PuD_Y - R_Y)[1:2],6)))
+test4 <- as.data.frame(t(round(waldtest(R4, ~PuD_Y - R_Y)[1:2],6)))
+test5 <- as.data.frame(t(round(waldtest(R5, ~PuD_Y - R_Y)[1:2],6)))
+test6 <- as.data.frame(t(round(waldtest(R6, ~PuD_Y - R_Y)[1:2],6)))
+test7 <- as.data.frame(t(round(waldtest(R7, ~PuD_Y - R_Y)[1:2],6)))
+test8 <- as.data.frame(t(round(waldtest(R8, ~PuD_Y - R_Y)[1:2],6)))
+test9 <- as.data.frame(t(round(waldtest(R9, ~PuD_Y - R_Y)[1:2],6)))
+test10<- as.data.frame(t(round(waldtest(R10, ~PuD_Y - R_Y)[1:2],6)))
+
+
+coef_test <- rbind(test1, test2,test3, test4, test5, test6, test7, test8,test9, test10)
+
+coef_names <- c("Full sample, Debt Public and Private",
+                "Full sample, Public Debt only",
+                "Full sample, Effect on Rating",
+                "Full sample, without Rating",
+                "Before IFC, Debt Public and Private",
+                "Before IFC, Effect on Rating",
+                "Before IFC, without Rating",
+                "After IFC, Debt Public and Private",
+                "After IFC, Effect on Rating",
+                "After IFC, without Rating")
+
+coef_test$model <- coef_names
+coef_test <- coef_test[c(3,1,2)]
+
+
+tabla_coef <- kable(coef_test,
+      col.names = c("Regression Model", "p-value", "Chi2"),
+      caption="Wald test for Public Debt and Reserves") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
+                full_width = F,
+                position = "center")
+
+print(tabla_coef)
+
+```
+
+
+
+
+
+```{r avplots, echo=FALSE}
+
+
+R1.test <- lm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb, data = clean_base)
+
+R2.test <- lm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + country_name_wb , data = clean_base)
+
+R3.test <- lm(lrating ~ lriskaversion +  lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb , data = clean_base)
+
+R4.test <- lm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb , data = clean_base)
+
+
+R5.test <- lm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb , data = clean_base, subset = year<=2007)
+
+R6.test <- lm(lrating ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y +  country_name_wb , data = clean_base, subset = year<=2007)
+
+R7.test <- lm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb , data = clean_base, subset = year<=2007)
+
+
+R8.test <- lm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb , data = clean_base, subset = year>=2010)
+
+R9.test <- lm(lrating ~ lriskaversion +  lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb, data = clean_base, subset = year>=2010)
+
+R10.test <- lm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb , data = clean_base, subset = year>=2010)
+
+avPlots(R1.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "Full Sample, Debt private and public")
+avPlots(R2.test, terms = ~ R_Y + PuD_Y, col = "red", main = "Full Sample, public debt only")
+avPlots(R3.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "Full sample, Effect on Rating")
+avPlots(R4.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "Full sample, without Rating")
+avPlots(R5.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "Before IFC, Debt Public and Private")
+avPlots(R6.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "Before IFC, Effect on Rating")
+avPlots(R7.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "Before IFC, without Rating")
+avPlots(R8.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "After IFC, Debt Public and Private")
+avPlots(R9.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "After IFC, Effect on Rating")
+avPlots(R10.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "After IFC, without Rating")
+
+
+
+
+
+```
+
+
+
+
