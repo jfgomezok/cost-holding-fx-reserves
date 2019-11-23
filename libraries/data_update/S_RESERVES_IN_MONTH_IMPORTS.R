@@ -1,10 +1,10 @@
 
 #################################################################################
-#######   ACTUALIZACION DE LA RESERVES IN MONTH OF IMPORTS  #####################
+#######   RESERVES IN MONTH OF IMPORTS UPDATE SCRIPT  ###########################
 #################################################################################
 
-library(wbstats)
-library(ggplot2)
+# library(wbstats)
+# library(ggplot2)
 
 # str(wb_cachelist, max.level = 1)
 # new_cache <- wbcache()
@@ -26,14 +26,16 @@ query <- wb(indicator = "FI.RES.TOTL.MO",
                         enddate = "2019",
                         POSIXct=TRUE)
 
-base <- query[c(1,3,7,8)]
 
-base.groups <- subset(base,   iso3c=="MIC" | iso3c=="HIC" )
-                             
+RtoM <- query %>%
+        select(iso3c, iso2c, value, country, date_ct) %>%
+        set_names(c("wbcode3", 'wbcode2',  "value", "country_name", "date"))
+
+#Sandbox:
 # 
-# 
-# ggplot(base.groups, aes(x=date_ct, y=value))+
-#   geom_line(aes(colour=iso3c))+
+# RtoM %>% filter(wbcode3 %in% c("MIC", "HIC")) %>%# 
+# ggplot(aes(x=date, y=value))+
+#   geom_line(aes(colour=wbcode3))+
 #   scale_color_manual(labels = c("High Income", "Middle Income"),
 #                            values = c("red", "blue"))+
 #   guides(color=guide_legend("Group of countries"))+
@@ -42,10 +44,12 @@ base.groups <- subset(base,   iso3c=="MIC" | iso3c=="HIC" )
 #             y="",
 #             caption="Source: The World Bank")+
 #   theme_classic()
+# 
 
 
 
+write_csv2(x    = RtoM,
+           path = "raw_data/reserves_to_imports.csv")
 
-write.csv2(base.groups, file="raw_data/reserves_to_imports.csv", row.names = FALSE)
-rm(base, base.groups,  query)
+rm(query, RtoM)
 print("reserves to imports ok!")

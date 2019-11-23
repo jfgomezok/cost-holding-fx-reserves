@@ -1,28 +1,26 @@
 
 
 #################################################################################
-#############   ACTUALIZACION DE LA LIBOR #######################################
+#############   LIBOR UPDATE SCRIPT #############################################
 #################################################################################
 
 
-if(is.na(api.key)){stop('You should provide a API key')}
+if(!exists('api.key')){stop('You should provide a API key')} else {print('API key ok!')}
 
 
 fred <- FredR(api.key)
-libor.fred <- fred$series.observations(series_id = "GBP3MTD156N", frequency="m")
-libor.fred$value <- as.numeric(libor.fred$value)
-libor.fred$date <- as.Date(libor.fred$date)
-libor.fred <- libor.fred[,3:4]
+libor.query <- fred$series.observations(series_id = "GBP3MTD156N", frequency="m")
 # str(libor.fred)
 
-colnames(libor.fred) <- c("date", "libor.TNA")
-libor.fred$month <- format(as.Date(libor.fred$date, "%Y-%m-%d"), "%Y-%m-01")
-libor.fred.monthly <- aggregate( libor.TNA ~ month, libor.fred, mean)
-colnames(libor.fred.monthly) <- c("date", "libor")
-libor.fred.monthly$date <- as.Date(as.yearmon(libor.fred.monthly$date))
-# str(libor.fred.monthly)
+libor <-  libor.query %>%
+          mutate(value = parse_number(value),
+                 date  = parse_date(date) ) %>%
+          select(date, value) %>%
+          set_names(c("date", "libor.TNA"))
 
 
-write.csv2(libor.fred.monthly, file="raw_data/libor.csv", row.names = FALSE)
-rm(fred, libor.fred, libor.fred.monthly)
+write_csv2(x    = libor,
+           path = "raw_data/libor.csv")
+
+rm(fred, libor.query, libor)
 print("libor OK!")

@@ -1,6 +1,6 @@
 
 #################################################################################
-#############   ACTUALIZACION DE LAS RESERVAS PARA EL P&L########################
+#############   P&L RESERVES UPDATE SCRIPT ######################################
 #################################################################################
 
 
@@ -29,7 +29,7 @@ colnames(reserves) <- c("date","country.abb","indicator","value")
 reserves$value <- as.numeric(as.character(reserves$value))
 reserves$date <- str_trim(reserves$date)
 reserves$date <- as.Date(as.yearmon(reserves$date))
-reserves$country.abb <- as.factor(reserves$country.abb)
+
 
 reserves <- spread(reserves, indicator, value)
 colnames(reserves) <-  c("date", "country.abb","NER","reserves")
@@ -41,6 +41,8 @@ reserves <- reserves[orden,]
 
 # str(reserves)
 
-write.csv2(reserves, file="raw_data/Reserves_NER.csv", row.names = FALSE)
+write_csv2(x    = reserves,
+           path = "raw_data/Reserves_NER.csv")
+
 rm(reserves, orden,  queryfilter,databaseID, startdate, enddate,checkquery, query , indicator, areas )
 print("reserves P&L OK!")

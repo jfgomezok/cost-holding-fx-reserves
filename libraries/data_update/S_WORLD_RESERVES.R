@@ -2,7 +2,7 @@
 
 
 #################################################################################
-#############   ACTUALIZACION DE LAS RESERVAS MUNDIALES##########################
+#############   WORLD RESERVES UPDATE SCRIPT ####################################
 #################################################################################
 
 
@@ -31,40 +31,48 @@ query3 <- CompactDataMethod(databaseID, queryfilter3, startdate, enddate,
 
 
 
-base2 <- query2[c(1,4,2)]
-colnames(base2) <- c("date","country.abb","value")
-base2$value <- as.numeric(as.character(base2$value))
-base2$date <- str_trim(base2$date)
-# base2$date <- as.Date(as.yearmon(base2$date))
-base2$country.abb <- as.factor(base2$country.abb)
+base2 <- query2[c(1,4,2)] %>%
+         set_names(c("date","country.abb","value")) %>%
+         mutate(value = as.numeric(value),
+                date = str_trim(date))
+
 # str(base2)
 
-base3 <- spread(base2, country.abb, value)
-colnames(base3) <-  c("date", "CN","JP","Taiwan","AdvEco","EmeEco")
+
+base3 <- spread(base2, country.abb, value) %>%
+         set_names(c("date", "CN","JP","Taiwan","AdvEco","EmeEco"))
+
 # str(base3)
 
 
 
-base5 <- query3[c(1,4,2)]
-names(base5) <- c("date","country.abb","oil.exporters")
-base5$oil.exporters <- as.numeric(as.character(base5$oil.exporters))
-base5$date <- str_trim(base5$date)
-# base2$date <- as.Date(as.yearmon(base2$date))
-base5$country.abb <- as.factor(base5$country.abb)
+base5 <- query3[c(1,4,2)] %>%
+         set_names(c("date","country.abb","oil.exporters")) %>%
+         mutate(oil.exporters = as.numeric(oil.exporters),
+                date = str_trim(date))
+
+
 # str(base5)
 
 oil.exporters <- aggregate(oil.exporters ~ date , base5, sum)
 
 
-base3<- merge(base3, oil.exporters, by="date")
+base3 <- merge(base3, oil.exporters, by="date") %>% as.tibble()
 
-base3$EM2 <- base3$EmeEco - base3$CN -base3$oil.exporters
-base3$AE2 <- base3$AdvEco - base3$JP - base3$Taiwan
+base3 <- base3 %>%
+         mutate(EM3 = EmeEco - CN - oil.exporters,
+                AE2 = AdvEco - JP - Taiwan) %>%
+         select(-AdvEco, -EmeEco)
 
-base3 <- base3[c(1,2,3,4,7,8,9)]
+str(base3)
+
+# base3 %>% gather(area, reserves, -date)  %>%
+# ggplot(aes(x=date, y=reserves, color= area))+
+#   geom_area()
 
 
+write_csv2(x    = base3,
+           path = "raw_data/world_reserves.csv")
 
-write.csv2(base3, file="raw_data/evolucion_reservas.csv",  row.names = FALSE)
 rm(base2, base3, base5,oil.exporters,query2, query3, queryfilter2, queryfilter3, areas1, areas2, checkquery , databaseID, indicator, startdate, enddate)
 print("reservas mundiales ok!")

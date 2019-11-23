@@ -1,21 +1,35 @@
 
 
 #################################################################################
-#############   ACTUALIZACION DE LA LIBOR #######################################
+#############   US TERM PREMIUM UPDATE SCRIPT ###################################
 #################################################################################
 
-if(is.na(api.key)){stop('You should provide a API key')}
+if(!exists('api.key')){stop('You should provide a API key')} else {print('API key ok!')}
 
 
 
 fred <- FredR(api.key)
-US_tp <- fred$series.observations(series_id = "T5YFF", frequency="m")
-US_tp$value <- as.numeric(US_tp$value)
-US_tp$date <- as.Date(US_tp$date)
-US_tp <- US_tp[,3:4]
-# str(libor.fred)
-US_tp <- na.omit(US_tp)
+UStp_query <- fred$series.observations(series_id = "T5YFF", frequency="m")
+# str(US_tp)
 
-write.csv2(US_tp, file="raw_data/US_tp.csv", row.names = FALSE)
-rm(fred, US_tp)
+US_tp <-  UStp_query %>%
+          mutate(value = parse_number(value),
+                 date  = parse_date(date) ) %>%
+          select(date, value) %>%
+          set_names(c("date", "US_TP"))
+
+# str(US_tp)
+
+# Chart:
+# US_tp %>%
+#   ggplot(aes(x=date, y=US_TP)) +
+#   geom_line() +
+#   geom_line(aes(y=0))
+
+
+
+write_csv2(x    = US_tp,
+           path = "raw_data/US_tp.csv")
+
+rm(fred, UStp_query, US_tp)
 print("US term premium OK!")

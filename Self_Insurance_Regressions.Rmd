@@ -35,14 +35,11 @@ fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 ```{r Carga de Datos, echo=FALSE, message=FALSE, warning=FALSE}
 
 
-base.paper <- read.csv2("outputs/self_insurance_db.csv")
-base.paper$year <- as.numeric(base.paper$year)
-base.paper$rating <- as.numeric(base.paper$rating)
-base.paper$riskaversion <- as.numeric(base.paper$riskaversion)
-base.paper$date  <- as.Date(base.paper$date)
+base.paper <- read_csv2("outputs/self_insurance_db.csv")
 # str(base.paper)
 
-base.paper <- base.paper[,-c(1,2,5)]
+base.paper <- base.paper %>% select(-ifscode, -wbcode2, -country_name_ifs)
+
 # names(base.paper)
 base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
 base.paper <- base.paper[,c(1:8,12,14:18,22:24)]

@@ -1,14 +1,9 @@
 
 #################################################################################
-#############   ACTUALIZACION DE LA RESERVES - M2 RATIO##########################
+#############   RESERVES vs M2 RATIO UPDATE SCRIPT ##############################
 #################################################################################
 
 
-
-library(wbstats)
-library(ggplot2)
-
-# 
 # str(wb_cachelist, max.level = 1)
 # new_cache <- wbcache()
 # embi <- wbsearch(pattern = "external debt stock")
@@ -20,23 +15,33 @@ query <- wb(indicator = "FM.LBL.BMNY.IR.ZS",
                         enddate = "2018",
                         POSIXct=TRUE)
 
-rm2ratio <- query[c(1,3,7,8)]
+# names(query)
+# str(query)
 
-colnames(rm2ratio) <- c("wbcode3", "ratio", "country_name_wb", "date")
+rm2ratio <- query %>%
+            select(iso3c, value, country, date_ct) %>%
+            set_names(c("wbcode3", "ratio", "country_name_wb", "date"))
 
-rm2ratio$date <- as.Date(rm2ratio$date)
-rm2ratio$ratio <- as.numeric(rm2ratio$ratio)
+
 # str(rm2ratio)
+# class(rm2ratio)
 
 
-countries <- c("ARG","BRA","CHL", "MEX", "TUR", "RUS","CHN", "IND", "ZAF")
-
-mybase <- subset(rm2ratio, wbcode3 %in% countries)
+# unique(rm2ratio$country_name_wb)
 # 
-# ggplot(mybase, aes(x=date, y=ratio))+
-#   geom_line( aes(color = wbcode3))
+# countries <- c("ARG","BRA","CHL", "MEX", "TUR", "RUS","CHN", "IND", "ZAF")
+# 
+# mybase <- rm2ratio %>%
+#           filter(wbcode3 %in% countries)
+# 
+# rm2ratio %>%
+#   filter(wbcode3 %in% c("BRA", "ARG")) %>%
+#   ggplot(aes(x=date, y=ratio, colour=wbcode3))+
+#   geom_line()
 
 
-write.csv2(rm2ratio, file="raw_data/reserves_m2_ratio.csv", row.names = FALSE)
+write_csv2(x = rm2ratio,
+          path = "raw_data/reserves_m2_ratio.csv")
+
 rm(query,  rm2ratio, countries, mybase)
 print("reserves to M2 ratio OK!")

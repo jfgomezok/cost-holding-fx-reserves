@@ -1,7 +1,7 @@
 
 
 #################################################################################
-#############   ACTUALIZACION DEL RIESGO PAIS ###################################
+#############   EMBI UPDATE SCRIPT ##############################################
 #################################################################################
 
 # library(wbstats)
@@ -14,19 +14,26 @@
 
 query.embi <- wb(indicator = "EMBIG",
                         startdate = "1990M01",
-                        enddate = "2018M12",
+                        enddate = "2019M12",
                         POSIXct=TRUE)
 
-embi.wb <- query.embi[c(1,3,6,7,8)]
-colnames(embi.wb) <- c("wbcode3", "spread", "wbcode2","country_name", "date")
-embi.wb$date <- as.Date(embi.wb$date)
-embi.wb$spread <- as.numeric(embi.wb$spread)
-embi.wb$wbcode2 <- as.factor(embi.wb$wbcode2)
-embi.wb$country_name <- as.factor(embi.wb$country_name)
+
+# names(query.embi)
+
+embi.wb <- query.embi %>%
+  select(iso3c, value, iso2c, country, date_ct) %>%
+  set_names(c("wbcode3", "spread", "wbcode2","country_name", "date"))
+
+str(embi.wb)
+# embi.wb$date <- as.Date(embi.wb$date)
+# embi.wb$spread <- as.numeric(embi.wb$spread)
+# embi.wb$wbcode2 <- as.factor(embi.wb$wbcode2)
+# embi.wb$country_name <- as.factor(embi.wb$country_name)
 # str(embi.wb)
 
 
-write.csv2(embi.wb, file="raw_data/embi.wb.csv", row.names = FALSE)
+write_csv2(x    = embi.wb,
+           path = "raw_data/embi.wb.csv")
 
 
 rm(embi.wb, query.embi)

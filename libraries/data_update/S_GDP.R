@@ -1,7 +1,7 @@
 
 
 #################################################################################
-#############   ACTUALIZACION DEl GDP 3333333 ###################################
+#############  GDP UPDATE SCRIPT ################################################
 #################################################################################
 
 
@@ -9,34 +9,34 @@
 # library(ggplot2)
 
 
-# str(wb_cachelist, max.level = 1)
-new_cache <- wbcache()
-gdp <- wbsearch(pattern = "gdp")
-
 
 # Source: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=AR
 
-query <- wb(indicator = "NY.GDP.MKTP.CD",
-            startdate = "1970",
-            enddate = "2018",
-            POSIXct=TRUE)
+query.gdp <- wb(indicator = "NY.GDP.MKTP.CD",
+             startdate = "1970",
+             enddate = "2018",
+             POSIXct=TRUE)
 
-gdp <- query[c(1,3,7,8)]
+# str(query.gdp)
 
-colnames(gdp) <- c("wbcode3", "gdp", "country_name_wb", "date")
+gdp <- query.gdp %>%
+       mutate(value = value / 1000000000) %>%
+       select(iso3c, value, iso2c, country, date_ct) %>%
+       set_names(c("wbcode3", "gdp", "wbcode2","country_name", "date"))
 
-gdp$date <- as.Date(gdp$date)
-gdp$gdp <- as.numeric(gdp$gdp)
 # str(gdp)
 
 
-mybase <- subset(gdp, wbcode3 == "ARG")
-# 
-# ggplot(mybase, aes(x=date, y=gdp))+
+# Sandbox:
+# gdp %>% filter(wbcode3 == 'BRA') %>%
+# ggplot(aes(x=date, y=gdp))+
 #   geom_line()
 
 
-write.csv2(gdp, file="raw_data/GDP_data.csv", row.names = FALSE)
-rm(query, gdp, mybase, new_cache)
+write_csv2(x    = gdp,
+           path = "raw_data/GDP_data.csv")
+
+
+rm(query.gdp, gdp)
 print("gdp ok!")
 

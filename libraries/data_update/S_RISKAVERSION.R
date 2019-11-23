@@ -1,25 +1,33 @@
 
 
 #################################################################################
-#############   ACTUALIZACION DEL RIESGO EMERGING MARKET#########################
+#############   RISK AVERSION UPDATE SCRIPT #####################################
 #################################################################################
 
 
 # library(FredR)
 
-if(is.na(api.key)){stop('You should provide a API key')}
+if(!exists('api.key')){stop('You should provide a API key')} else {print('API key ok!')}
 
 
 
 fred <- FredR(api.key)
-bofahy <- fred$series.observations(series_id = "BAMLH0A0HYM2", frequency = "m")[-1,]
-bofahy$date <- as.Date(bofahy$date)
-bofahy$value <- as.numeric(bofahy$value)*100
+bofahy_query <- fred$series.observations(series_id = "BAMLH0A0HYM2", frequency = "m")
 
-bofahy <- bofahy[,3:4]
+bofahy <- bofahy_query %>%
+          mutate(value = parse_number(value, na = '.')*100,
+                 date  = parse_date(date) ) %>%
+          select(date, value) %>%
+          set_names(c("date", "riskaversion"))
 
-colnames(bofahy) <- c("date", "hy.fred" )
+str(bofahy)
 
-write.csv2(bofahy, file="raw_data/risk.aversion.csv", row.names = FALSE)
-rm(bofahy,  fred)
+# Chart:
+# bofahy %>% filter(date >= ymd('20180101')) %>%
+#   ggplot(aes(x=date, y=riskaversion)) + geom_line()
+
+write_csv2(x    = bofahy,
+           path = "raw_data/risk.aversion.csv")
+
+rm(bofahy,  fred, bofahy_query)
 print("risk aversion ok!")

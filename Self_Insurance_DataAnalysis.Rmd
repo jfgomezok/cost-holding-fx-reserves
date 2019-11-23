@@ -1,12 +1,3 @@
----
-title: "Regression Outputs"
-author: "JFG"
-date:  "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-  html_document:
-    df_print: paged
----
-
 
 ```{r setup, include=FALSE, echo=FALSE}
 
@@ -16,11 +7,11 @@ options(    tikzDefaultEngine = "xetex",   # Accent in tables
             java.parameters = "-Xmx8000m", # Avoid  scientific notation
             knitr.kable.NA = 's/d')
 
-Sys.setlocale("LC_ALL","Spanish")
+Sys.setlocale("LC_ALL","English")
 
 source("libraries/load_packages.R")
 
-fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
+OutputDate <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
 
 ```
@@ -29,38 +20,22 @@ fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
 We gather data from:
 
-1. WB --> JPMorgan EMBI and Debt
+1. WB --> JPMorgan EMBI, Debt and GDP
 2. IMF --> Reserves
 3. S&P --> Credit Ratings
 4. St.Louis FED --> US10y and Risk Avertion
 
 
-```{r include=FALSE, results="asis"}
-cat("
-<style>
-caption {
-      color: black;
-      font-weight: bold;
-      font-size: 1.0em;
-      text-align: center;
-    }
-</style>
-")
-```
+```{r DataLoad, echo=FALSE, message=FALSE, warning=FALSE}
 
+base.paper <- read_csv2("outputs/self_insurance_db.csv")
 
- 
-
-```{r Carga de Datos, echo=FALSE, message=FALSE, warning=FALSE}
-
-base.paper <- read.csv2("outputs/self_insurance_db.csv")
-base.paper$year <- as.numeric(base.paper$year)
-base.paper$rating <- as.numeric(base.paper$rating)
-base.paper$riskaversion <- as.numeric(base.paper$riskaversion)
-base.paper$date  <- as.Date(base.paper$date)
 # str(base.paper)
 
-base.paper <- base.paper[,-c(1,2,5)]
+
+base.paper <- base.paper %>% select(-ifscode, -wbcode2, -country_name_ifs)
+
+names(base.paper)
 base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
 
 ```
@@ -68,7 +43,7 @@ base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
 
 ## Statistics of the master data base:
 
-```{r ESTADISTICOS, message=FALSE, warning=FALSE, include=FALSE}
+```{r statistics, message=FALSE, warning=FALSE, include=FALSE}
 
 
 
@@ -85,24 +60,26 @@ stargazer(base.paper[,c(5:12,22:25)],
 
 ## A look to Argentina's public debt
 
-```{r TABLA DEUDA ARGENTINA, message=FALSE, warning=FALSE, include=FALSE}
+```{r ARGENTINA PUBLIC DEBT, message=FALSE, warning=FALSE, include=FALSE}
 
 base.paper %>%
   filter( wbcode3 == "ARG", date >= "2010-01-01" ) %>%
-  filter (months(date) == "diciembre") %>%
-  select ( year, public_debt, PuD_Y) %>%
+  filter (month(date) == 12) %>%
+  select ( year, public_debt, PuD_Y, private_debt, PrD_Y) %>%
   mutate (public_debt = round(public_debt,1)) %>%
   # mutate (private_debt = round(private_debt,1)) %>%
   # mutate (total_debt = round(total_debt,1)) %>%
-  mutate( PuD_Y = percent(PuD_Y)) %>%
+  mutate( PuD_Y = percent(PuD_Y),
+          PrD_Y = percent(PrD_Y)) %>%
   # mutate( PrD_Y = percent(PrD_Y)) %>%
   # mutate( D_Y = percent(D_Y)) %>%
   kable(.,
-        col.names = c("Year", "US$ Bn", "% GDP"),
+        col.names = c("Year", "US$ Bn", "% GDP", "US$ Bn", "% GDP"),
         caption = "Argentina Exernal Public Debt with private Creditors") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive"),
                 full_width = F,
-                position = "left")
+                position = "left") %>%
+  add_header_above(c(' ' = 1, 'Public Debt' = 2, 'Private Debt' = 2))
   
 
 
@@ -133,26 +110,32 @@ Statistics of the cleaned-data:
 
 
 
-```{r definicion de periodos, echo=FALSE, message=FALSE, warning=FALSE}
+```{r periods selection, echo=FALSE, message=FALSE, warning=FALSE}
 
 
-all_period <- subset (base.paper, year>=2000 &  year!=2008 &  year!=2009 & year<=2017
-                      & rating>3
+all_period <- base.paper %>%
+              filter(between(year, 2000, 2018) &  year!=2008 &  year!=2009
+                     & rating>3 
+                     & spread< 1000
+                     & !wbcode3 %in% c("LBN", "CHN")
+                     & lreserves_1 != "NA" &  lpublicdebt != "NA")
+
+pre_crisis <- base.paper %>%
+              filter(between(year, 2000, 2007) 
+                     & rating>3 
+                     & spread< 1000
+                     & !wbcode3 %in% c("LBN", "CHN")
+                     & lreserves_1 != "NA" &  lpublicdebt != "NA")
+
+
+post_crisis <- base.paper %>%
+               filter(year >= 2010 
+                      & rating>3 
                       & spread< 1000
                       & !wbcode3 %in% c("LBN", "CHN")
                       & lreserves_1 != "NA" &  lpublicdebt != "NA")
 
-pre_crisis <- subset (base.paper, year>=2000 & year<=2007  
-                          & rating>3 
-                          & spread< 1000
-                          & !wbcode3 %in% c("LBN", "CHN")
-                          & lreserves_1 != "NA" & lpublicdebt != "NA")
 
-post_crisis <- subset (base.paper, year>=2010 
-                        & rating>3 
-                        & spread< 1000
-                        & !wbcode3 %in% c("LBN", "CHN")
-                        & lreserves_1 != "NA" & lpublicdebt != "NA")
 
 
 
@@ -190,11 +173,11 @@ stargazer(all_period[,c(5:12,22:25)],
 
 
 h1a <- ggplot(base.paper, aes(spread))+
-  geom_histogram()+
-  geom_vline(aes(xintercept=mean(spread, na.rm=T)),
-            color="blue", linetype="dashed", size=1)+
-  ggtitle("Histogram: Spread\nMaster Data")+
-  labs(x = "Sovereign Spread")
+        geom_histogram()+
+        geom_vline(aes(xintercept=mean(spread, na.rm=T)),
+                  color="blue", linetype="dashed", size=1)+
+        ggtitle("Histogram: Spread\nMaster Data")+
+        labs(x = "Sovereign Spread")
 
 h1b <- ggplot(all_period, aes(spread))+
   geom_histogram()+
@@ -303,10 +286,9 @@ Detail public debt with private creditors:
 
 debt_ratio <- base.paper %>%
   select(wbcode3, date, D_Y) %>%
-  filter( month(date) == 12 ) %>%
-  filter( date > "2013-01-01" ) %>%
-  mutate(D_Y = round(D_Y *100,1)) %>%
-  mutate(date= format.Date(date, "%b-%y"))
+  filter( month(date) == 12 & date > "2013-01-01" ) %>%
+  mutate(D_Y  = round(D_Y *100,1), 
+         date = format.Date(date, "%b-%y"))
 
 debt_ratio1 <- spread(debt_ratio, date, D_Y)
 
@@ -330,18 +312,17 @@ kable(debt_ratio1) %>%
 
 
 ratios <- all_period %>%
-  select(wbcode3, date, R_Y , PuD_Y ) %>%
-  filter( month(date) == 12) %>%
-  mutate(D_Y = PuD_Y *100)%>%
-  mutate(R_Y = R_Y *100)%>%
-  mutate(date = as.integer(format(date, "%Y")))%>%
-  na.omit()
+          select(wbcode3, date, R_Y , PuD_Y ) %>%
+          filter( month(date) == 12) %>%
+          mutate(D_Y = PuD_Y *100 ,
+                 R_Y = R_Y *100 , 
+                 date = as.integer(format(date, "%Y")))%>%
+          na.omit()
 
 
 # str(ratios)
 max_x <- max(ratios$D_Y,  na.rm = TRUE)
 max_y <- max(ratios$R_Y, na.rm = TRUE)
-
 max <- round(max(max_x, max_y),0)+5
 
 # str(ratios)
@@ -366,7 +347,9 @@ ggplot(ratios, aes(D_Y, R_Y, color=wbcode3))+
   geom_abline(aes(slope=1, intercept=0))+
   scale_x_continuous(name="Debt Ratio",limits=c(0,max)) +
   scale_y_continuous(name="Reserve Ratio",limits=c(0, max))+
-  ggtitle("Ratios de Reservas y Deuda a diciembre de cada año")
+  ggtitle("Ratios de Reservas y Deuda a diciembre de cada año")+
+  theme(legend.title = element_blank(),
+        legend.justification = 'center')
 
 
 
@@ -436,5 +419,17 @@ kable(resume,
 
 ```
 
+
+
+```{r tasas}
+
+base.paper %>%
+  filter(date >= ymd('20180101'), !wbcode3 == 'VEN') %>%
+  ggplot(aes(x=date))+
+  geom_line(aes(y=spread, colour= wbcode3)) +
+  geom_line(data = base.paper %>% filter(wbcode3 == 'ARG', date >= ymd('20180101')), aes(y=spread), size = 1) +
+  geom_line(aes(y=riskaversion))
+
+```
 
 

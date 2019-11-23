@@ -6,7 +6,7 @@
 # library(splines)
 # library(ggplot2)
 
-gdp.wb <- read.csv2("raw_data/GDP_data.csv")
+gdp.wb <- read_csv2("raw_data/GDP_data.csv")
 
 country.list <- as.character(unique(gdp.wb$wbcode3))
 
@@ -20,7 +20,7 @@ gdp.monthly <- data.frame(wbcode3 = as.character(),
 for (i in country.list) {
     # cat(" i:", i)
     # i <- "BRA" "ARG"
-    gdp.yearly <- subset(gdp.wb, wbcode3 == i)
+    gdp.yearly <- gdp.wb %>% filter(wbcode3 == i)
     
     orden <- order(gdp.yearly$date)
     gdp.yearly <- gdp.yearly[orden, ]
@@ -44,12 +44,16 @@ for (i in country.list) {
 
 }
 
-# table(gdp.monthly$wbcode3)
 
-country <- "ARG"
-# ggplot( gdp.monthly[gdp.monthly$wbcode3 == country, ], aes(x = date, y = MGDP) ) +
+# Sandbox:
+# gdp.monthly %>% filter(wbcode3 == 'ARG') %>%
+#   ggplot(aes(x = date, y = MGDP) ) +
 #   geom_line()
 
-write.csv2(gdp.monthly, file="raw_data/GDP_Monthly.csv", row.names = FALSE)
-rm(gdp.monthly, gdp.yearly,aux, country, i, mindate, orden, gdp.bymonth,gdp.wb, country.list, splineout, spline.n)
+
+write_csv2(x    = gdp.monthly,
+           path = "raw_data/GDP_Monthly.csv")
+
+
+rm(gdp.monthly, gdp.yearly,aux, i, mindate, orden, gdp.bymonth,gdp.wb, country.list, splineout, spline.n)
 print("monthly gdp ok!")
