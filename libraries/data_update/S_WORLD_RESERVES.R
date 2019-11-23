@@ -64,7 +64,7 @@ base3 <- base3 %>%
                 AE2 = AdvEco - JP - Taiwan) %>%
          select(-AdvEco, -EmeEco)
 
-str(base3)
+# str(base3)
 
 # base3 %>% gather(area, reserves, -date)  %>%
 # ggplot(aes(x=date, y=reserves, color= area))+

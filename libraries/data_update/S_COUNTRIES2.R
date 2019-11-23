@@ -12,10 +12,10 @@ locationResponse <- content(locationRequest, as = "text", encoding = "UTF-8")
 
 # Parse the JSON content and convert it to a data frame.
 locationsJSON <- fromJSON(locationResponse, flatten = TRUE) %>%
-  data.frame() %>% as.tibble()
+  data.frame() %>% as_tibble()
 
 
-class(locationsJSON)
+# class(locationsJSON)
 
 
 countries <- locationsJSON %>%

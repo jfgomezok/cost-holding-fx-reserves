@@ -4,6 +4,9 @@
 
 #  RUN ALL LINES
 
+#Countries
+source("libraries/data_update/S_COUNTRIES2.R")
+
 #Data from St Louis FED (API key required)
 source("libraries/data_update/S_US10y.R")
 source("libraries/data_update/S_RISKAVERSION.R")
@@ -22,7 +25,7 @@ source("libraries/data_update/S_RM2RATIO.R")
 
 #Data from IMF
 source("libraries/data_update/S_RESERVES.R")
-source("libraries/data_update/S_RESERVAS_MUNDIALES.R")
+source("libraries/data_update/S_WORLD_RESERVES.R")
 source("libraries/data_update/S_RESERVES_P&L.R")
 
 #Data from S&P Ratings

@@ -6,15 +6,16 @@
 
 # library(FredR)
 
-if(is.na(api.key)){stop('You should provide a API key')}
+if(!exists('api.key')){stop('You should provide a API key')} else {print('API key ok!')}
 
 
 fred <- FredR(api.key)
+
 US10y.fred <- fred$series.observations(series_id = "DGS10", frequency="m")
 
-str(US10y.fred)
+# str(US10y.fred)
 
-US10y.fred <- US10y.fred %>%
+US10y.fred <- US10y.fred %>% as_tibble() %>%
               mutate(value = parse_number(value),
                      date = parse_date(date)) %>%
               select(date, value)

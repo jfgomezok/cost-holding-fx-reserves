@@ -43,5 +43,5 @@ rm2ratio <- query %>%
 write_csv2(x = rm2ratio,
           path = "raw_data/reserves_m2_ratio.csv")
 
-rm(query,  rm2ratio, countries, mybase)
+rm(query,  rm2ratio)
 print("reserves to M2 ratio OK!")

@@ -24,7 +24,7 @@ embi.wb <- query.embi %>%
   select(iso3c, value, iso2c, country, date_ct) %>%
   set_names(c("wbcode3", "spread", "wbcode2","country_name", "date"))
 
-str(embi.wb)
+# str(embi.wb)
 # embi.wb$date <- as.Date(embi.wb$date)
 # embi.wb$spread <- as.numeric(embi.wb$spread)
 # embi.wb$wbcode2 <- as.factor(embi.wb$wbcode2)

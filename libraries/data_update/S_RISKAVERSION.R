@@ -20,7 +20,7 @@ bofahy <- bofahy_query %>%
           select(date, value) %>%
           set_names(c("date", "riskaversion"))
 
-str(bofahy)
+# str(bofahy)
 
 # Chart:
 # bofahy %>% filter(date >= ymd('20180101')) %>%
