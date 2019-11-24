@@ -7,16 +7,29 @@
 if(!exists('api.key')){stop('You should provide a API key')} else {print('API key ok!')}
 
 
+# Set the api call 
+url <- 'https://api.stlouisfed.org/fred/series/'
+category <- 'observations?series_id=T5YFF'
+file_type <- 'file_type=json'
+frequency = 'frequency=m'
+aggregation_method = 'aggregation_method=avg'
+path <- paste0(url, category, "&", frequency, '&',aggregation_method,"&", 'api_key=',api.key, "&", file_type)
 
-fred <- FredR(api.key)
-UStp_query <- fred$series.observations(series_id = "T5YFF", frequency="m")
-# str(US_tp)
+# Call the api
+Request <- GET(url = path)
+Response <- content(Request, as = "text", encoding = "UTF-8")
 
-US_tp <-  UStp_query %>%
-          mutate(value = parse_number(value),
-                 date  = parse_date(date) ) %>%
-          select(date, value) %>%
-          set_names(c("date", "US_TP"))
+# Parse the JSON content and convert it to a tibble
+JSON <- fromJSON(Response, flatten = TRUE) %>%
+  data.frame() %>% as_tibble()
+
+
+US_tp <- JSON %>%
+  select(observations.date, observations.value) %>%
+  set_names(c('date', 'US_TP')) %>%
+  mutate(date = parse_date(date),
+         US_TP = as.numeric(US_TP))
+
 
 # str(US_tp)
 

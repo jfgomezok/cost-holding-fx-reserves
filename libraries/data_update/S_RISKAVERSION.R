@@ -11,14 +11,28 @@ if(!exists('api.key')){stop('You should provide a API key')} else {print('API ke
 
 
 
-fred <- FredR(api.key)
-bofahy_query <- fred$series.observations(series_id = "BAMLH0A0HYM2", frequency = "m")
+# Set the api call 
+url <- 'https://api.stlouisfed.org/fred/series/'
+category <- 'observations?series_id=BAMLH0A0HYM2'
+file_type <- 'file_type=json'
+frequency = 'frequency=m'
+aggregation_method = 'aggregation_method=avg'
+path <- paste0(url, category, "&", 'api_key=',api.key, "&", file_type , "&", frequency)
 
-bofahy <- bofahy_query %>%
-          mutate(value = parse_number(value, na = '.')*100,
-                 date  = parse_date(date) ) %>%
-          select(date, value) %>%
-          set_names(c("date", "riskaversion"))
+# Call the api
+Request <- GET(url = path)
+Response <- content(Request, as = "text", encoding = "UTF-8")
+
+# Parse the JSON content and convert it to a tibble
+JSON <- fromJSON(Response, flatten = TRUE) %>%
+  data.frame() %>% as_tibble()
+
+bofahy <- JSON %>%
+          select(observations.date, observations.value) %>%
+          set_names(c('date', 'riskaversion')) %>%
+          mutate(date = parse_date(date),
+                 riskaversion = as.numeric(riskaversion))
+
 
 # str(bofahy)
 
