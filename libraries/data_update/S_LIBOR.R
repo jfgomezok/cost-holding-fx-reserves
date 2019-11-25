@@ -35,5 +35,5 @@ libor <- JSON %>%
 write_csv2(x    = libor,
            path = "raw_data/libor.csv")
 
-rm(fred, libor.query, libor)
+rm(libor, url, JSON, Request, Response, category, file_type, frequency, aggregation_method, path )
 print("libor OK!")

@@ -44,5 +44,5 @@ US_tp <- JSON %>%
 write_csv2(x    = US_tp,
            path = "raw_data/US_tp.csv")
 
-rm(fred, UStp_query, US_tp)
+rm(US_tp,  Request,Response , JSON, url, category, file_type, frequency, aggregation_method, path )
 print("US term premium OK!")

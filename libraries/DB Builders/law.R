@@ -13,22 +13,20 @@
 
 
 #lectura de la data ifm
-my_df <- read.csv2("raw_data/Reserves_NER.csv")
-my_df$date <- as.Date(my_df$date)
+my_df <- read_csv2("raw_data/Reserves_NER.csv") %>% as_tibble()
+# my_df$date <- as.Date(my_df$date)
 # str(my_df)
 
+countries.wb <- read_csv2("raw_data/CountriesWB.csv") 
 
-countries.imf <- read.csv2("Inputs/imfcountriesmetadata.csv")
-my_df <- merge(my_df, countries.imf[3:4], by.x="country.abb",  by.y = "Country.ISO.2.Code")
-
-colnames(my_df) <- c("wbcode2", "date","NER", "reserves","wbcode3")
-my_df <- my_df[c("wbcode2","wbcode3", "date","NER", "reserves")]
-
-my_df <- subset(my_df, date >= "1998-12-01" & date <= "2018-12-01")
+my_df <- left_join(my_df, countries.wb[1:2], by = c("country.abb" = "wbcode2")) %>%
+         set_names(c('date',"wbcode2" ,"NER", "reserves","wbcode3")) %>%
+         select("wbcode2","wbcode3", "date","NER", "reserves") %>%
+         filter(between(date, ymd('1998-12-01'), ymd("2018-12-01")))
 
 # stargazer(my_df, type="text")
 
-rm(countries.imf)
+rm(countries.wb)
 
 
 
@@ -36,13 +34,11 @@ rm(countries.imf)
 #############     LIBOR     ##########################################
 ######################################################################
 
-#lectura de la data fed st. louis
-libor <- read.csv2("raw_data/libor.csv")
-libor$date <- as.Date(libor$date)
+libor <- read_csv2("raw_data/libor.csv")
 # str(libor)
 
 
-my_df <- merge(my_df, libor, by.x = "date", by.y = "date", sort = FALSE)
+my_df <- left_join(my_df, libor, by = "date")
 
 my_df <- my_df %>%
   arrange (date) %>%
@@ -51,7 +47,11 @@ my_df <- my_df %>%
 
 rm(libor)
 
-my_df$net.reserves <- (my_df$reserves / (1+ my_df$libor/100))
+# Net Reserves:
+
+my_df <- my_df %>%
+         mutate(net.reserves = reserves / (1+ libor.TNA/100))
+
 
 
 start.date <- min(my_df$date)
@@ -59,24 +59,12 @@ start.date <- min(my_df$date)
 
 
 # change in fx, monthly basis
-for (i in 1:dim(my_df)[1]) {
-  
-  if ( my_df$date[i] == start.date)
-  {my_df$NER.monthly.change[i] <- NA}
-  else {my_df$NER.monthly.change[i] <- (my_df$NER[i] - my_df$NER[i-1])}
-}
 
+my_df <- my_df %>%
+  group_by(wbcode3) %>%
+  mutate(NER.monthly.change          = NER - dplyr::lag(x = NER, n = 1),
+         net.reserves.monthly.change = net.reserves - dplyr::lag(x = net.reserves, n = 1))
 
-# change in net reserves, monthly basis
-for (i in 1:dim(my_df)[1]) {
-  
-  if ( my_df$date[i] == start.date)
-  {my_df$net.reserves.monthly.change[i] <- NA}
-  else{my_df$net.reserves.monthly.change[i] <- (my_df$net.reserves[i] - my_df$net.reserves[i-1])}
-}
-
-
-rm(i)
 
 
 
@@ -85,13 +73,14 @@ rm(i)
 ####################      CARRY CIP     ##############################
 ######################################################################
 
-implied.ndf <- read.csv2("Inputs/NDF.test.csv")   # DATA DE BLOOMBERG!!
+implied.ndf <- read_csv2("Inputs/CIP.csv")   # BLOOMBERG!!
+
 implied.ndf <- gather(implied.ndf, date, TNA, 3:172)
 colnames(implied.ndf) <- c("country.name","wbcode2","date","TNA.Carry")
+
 implied.ndf$date <- gsub("X","",implied.ndf$date)
-implied.ndf$date <- as.Date(implied.ndf$date, "%d.%m.%Y")
-implied.ndf$country.name <- as.factor(implied.ndf$country.name)
-implied.ndf$wbcode2 <- as.factor(implied.ndf$wbcode2)
+implied.ndf$date <- as.Date(implied.ndf$date, "%d/%m/%Y")
+
 implied.ndf$TNA.Carry <- as.numeric(implied.ndf$TNA.Carry)
 
 
@@ -102,16 +91,14 @@ implied.ndf <- implied.ndf %>%
   arrange( date ) %>%
   arrange (country.name)
 
-# str(implied.jfg)
-
 
 
 ######################################################################
 ###################     EMBI       ###################################
 ######################################################################
 
-embi.wb <- read.csv2("raw_data/embi.wb.csv")
-embi.wb$date <- as.Date(embi.wb$date)
+embi.wb <- read_csv2("raw_data/embi.wb.csv")
+# embi.wb$date <- as.Date(embi.wb$date)
 colnames(embi.wb)[4] <- "country_name_wb"
 
 
@@ -123,8 +110,8 @@ colnames(embi.wb)[4] <- "country_name_wb"
 
 
 
-US_tp <- read.csv2("raw_data/US_tp.csv")
-US_tp$date <- as.Date(US_tp$date)
+US_tp <- read_csv2("raw_data/US_tp.csv")
+# US_tp$date <- as.Date(US_tp$date)
 colnames(US_tp)[2] <- "us_tp"
 # str(US_tp)
 
@@ -136,9 +123,8 @@ colnames(US_tp)[2] <- "us_tp"
 ######################################################################
 
 #lectura de la data fed st. louis
-gdp <- read.csv2("raw_data/GDP_Monthly.csv")
-gdp$date <- as.Date(gdp$date)
-gdp$MGDP <- gdp$MGDP /1000000 
+gdp <- read_csv2("raw_data/GDP_Monthly.csv")
+# gdp$date <- as.Date(gdp$date)
 # str(gdp)
 
 
@@ -151,11 +137,12 @@ gdp$MGDP <- gdp$MGDP /1000000
 
 
 
-my_df <- merge(my_df, implied.ndf, by = c("date","wbcode2"))
-my_df <- merge(my_df, embi.wb, by = c("date","wbcode3", "wbcode2"), all.x = TRUE)
-my_df <- merge(my_df, US_tp, by = c("date"), all.x = TRUE)
-my_df <- merge(my_df, gdp, by=c("date","wbcode3"), all.x = TRUE)
+my_df <- left_join(my_df, implied.ndf[,c(2:4)], by = c("date","wbcode2"))
+my_df <- left_join(my_df, embi.wb[,c(1:3,5)], by = c("date","wbcode3", "wbcode2"))
+my_df <- left_join(my_df, US_tp, by = c("date"))
+my_df <- left_join(my_df, gdp, by=c("date","wbcode3"))
 
+stargazer(as.data.frame(my_df), type = 'text')
 
 my_df <- my_df %>%
   arrange (date) %>%
@@ -165,9 +152,8 @@ my_df <- my_df %>%
 
 # names(my_df)
 
-my_df <- my_df[,c("wbcode3","country.name","date","NER","reserves","libor","MGDP","TNA.Carry","spread","us_tp","net.reserves","NER.monthly.change","net.reserves.monthly.change")]
 
-rm(gdp, implied.ndf)
+rm(gdp, implied.ndf, embi.wb, US_tp)
 
 
 
@@ -182,70 +168,25 @@ my_df <- my_df %>%
          TEM.spread = - ( (  (1+ TNA.spread/100) ^ (1/12) ) -1))
 
 
-
-start.date <- min(my_df$date)
-
-# change in reserves accumulated, monthly basis
-for (i in 1:dim(my_df)[1]) {
-  
-  if ( my_df$date[i] == start.date)
-  {my_df$net.reserves.monthly.change.acum[i] <- my_df$net.reserves.monthly.change[i]}
-  
-  else {my_df$net.reserves.monthly.change.acum[i] <- my_df$net.reserves.monthly.change[i]+
-    my_df$net.reserves.monthly.change.acum[i-1]}
-}
-
-
-# FX valuation effect in local currency
-my_df$FX.purchases.valuation.effect.lcu.monthly <- my_df$net.reserves.monthly.change.acum * my_df$NER.monthly.change
+unique(year(my_df$date))
 
 
 
-# FX valuation effect in USD
-my_df$Valuation.effect.monthly <- my_df$FX.purchases.valuation.effect.lcu.monthly /my_df$NER
+my_df <- my_df %>%
+  filter(date>= "2004-11-01") %>%
+  group_by(wbcode3) %>%
+  mutate(net.reserves.monthly.change               = replace_na(net.reserves.monthly.change, 0),
+         net.reserves.monthly.change.acum          = cumsum(net.reserves.monthly.change),
+         FX.purchases.valuation.effect.lcu.monthly = net.reserves.monthly.change.acum *  NER.monthly.change,
+         Valuation.effect.monthly                  = ifelse(is.na(FX.purchases.valuation.effect.lcu.monthly/ NER), 0, FX.purchases.valuation.effect.lcu.monthly/ NER),
+         Valuation.effect.monthly.acum             = cumsum(Valuation.effect.monthly),
+         CarryCIP.effect.monthly                   = ifelse(is.na(TEM.cip * net.reserves.monthly.change.acum), 0, TEM.cip * net.reserves.monthly.change.acum),
+         CarrySpread.effect.monthly                = TEM.spread * net.reserves.monthly.change.acum,
+         CarryCIP.effect.monthly.acum              = cumsum(CarryCIP.effect.monthly), 
+         CarrySpread.effect.monthly.acum           = cumsum(CarrySpread.effect.monthly), 
+         PNL.total.monthly.acum1                   = Valuation.effect.monthly.acum + CarryCIP.effect.monthly.acum,
+         PNL.total.monthly.acum2                   = Valuation.effect.monthly.acum + CarrySpread.effect.monthly.acum)
 
-
-# P&L Valuation Effect acum
-for (i in 1:dim(my_df)[1]) {
-  if ( my_df$date[i] == start.date)
-  {my_df$Valuation.effect.monthly.acum[i] <- my_df$Valuation.effect.monthly[i]}
-  
-  else {my_df$Valuation.effect.monthly.acum[i] <- my_df$Valuation.effect.monthly.acum[i-1] +
-    my_df$Valuation.effect.monthly[i]}
-}
-
-
-# P&L Carry 
-my_df$CarryCIP.effect.monthly <- my_df$TEM.cip * my_df$net.reserves.monthly.change.acum
-my_df$CarrySpread.effect.monthly <- my_df$TEM.spread * my_df$net.reserves.monthly.change.acum
-
-
-
-# P&L Carry USD (acum)
-for (i in 1:dim(my_df)[1]) {
-  if ( my_df$date[i] == start.date)
-  {my_df$CarryCIP.effect.monthly.acum[i] <- my_df$CarryCIP.effect.monthly[i]}
-  else
-  {my_df$CarryCIP.effect.monthly.acum[i] <- my_df$CarryCIP.effect.monthly[i] + my_df$CarryCIP.effect.monthly.acum[i-1]}
-}
-
-
-
-for (i in 1:dim(my_df)[1]) {
-  if ( my_df$date[i] == start.date)
-  {my_df$CarrySpread.effect.monthly.acum[i] <- my_df$CarrySpread.effect.monthly[i]}
-  else
-  {my_df$CarrySpread.effect.monthly.acum[i] <- my_df$CarrySpread.effect.monthly[i] + my_df$CarrySpread.effect.monthly.acum[i-1]}
-}
-
-
-
-# P&L Total USD (acum)
-my_df$PNL.total.monthly.acum1 <- my_df$Valuation.effect.monthly.acum + my_df$CarryCIP.effect.monthly.acum
-my_df$PNL.total.monthly.acum2 <- my_df$Valuation.effect.monthly.acum + my_df$CarrySpread.effect.monthly.acum
-
-
-rm(i,start.date)
 
 
 

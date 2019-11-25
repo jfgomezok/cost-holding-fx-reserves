@@ -35,5 +35,5 @@ US10y.fred <- JSON %>%
 
 
 write_csv2(x = US10y.fred, path = "raw_data/us10y.csv")
-rm(fred, US10y.fred  )
+rm(US10y.fred, Request, Response, JSON,  url, category, file_type, frequency, aggregation_method, path   )
 print("us10y ok!")

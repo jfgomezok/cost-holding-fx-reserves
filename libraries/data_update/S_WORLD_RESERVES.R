@@ -57,7 +57,7 @@ base5 <- query3[c(1,4,2)] %>%
 oil.exporters <- aggregate(oil.exporters ~ date , base5, sum)
 
 
-base3 <- merge(base3, oil.exporters, by="date") %>% as.tibble()
+base3 <- merge(base3, oil.exporters, by="date") %>% as_tibble()
 
 base3 <- base3 %>%
          mutate(EM3 = EmeEco - CN - oil.exporters,

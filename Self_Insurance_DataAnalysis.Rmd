@@ -3,10 +3,6 @@
 
 rm(list = ls()) 
 
-options(    tikzDefaultEngine = "xetex",   # Accent in tables
-            java.parameters = "-Xmx8000m", # Avoid  scientific notation
-            knitr.kable.NA = 's/d')
-
 Sys.setlocale("LC_ALL","English")
 
 source("libraries/load_packages.R")
@@ -28,15 +24,13 @@ We gather data from:
 
 ```{r DataLoad, echo=FALSE, message=FALSE, warning=FALSE}
 
-base.paper <- read_csv2("outputs/self_insurance_db.csv")
+DBSection3 <- read_csv2("outputs/self_insurance_db.csv")
 
-# str(base.paper)
+# str(DBSection3)
 
 
-base.paper <- base.paper %>% select(-ifscode, -wbcode2, -country_name_ifs)
+DBSection3 <- DBSection3 %>% select(-ifscode, -wbcode2, -country_name_ifs)
 
-names(base.paper)
-base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
 
 ```
 
@@ -45,15 +39,28 @@ base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
 
 ```{r statistics, message=FALSE, warning=FALSE, include=FALSE}
 
+# Tip:  stargazer only supports data.frame objects (not tibbles)
+
+DBSection3 %>%
+  select(spread, us10y, riskaversion, reserves, public_debt, private_debt, rating, MGDP, R_Y, PuD_Y, PrD_Y, D_Y) %>% as.data.frame() %>%
+  stargazer(type = 'text',
+            title = "Master Data Base, with NAs",
+            out=    "Outputs/Data_Analysis_Table1.html")
+
+```
 
 
-stargazer(base.paper[,c(5:12,22:25)],
-          type =  "text",
-          iqr =   FALSE,
-          title=  "Master Data Base, with NAs",
-          out=    "Outputs/Data_Analysis_Table1.html"
-          )
 
+```{r boxplots, message=FALSE, warning=FALSE, include=FALSE}
+
+# Tip:  stargazer only supports data.frame objects (not tibbles)
+
+DBSection3 %>%
+  select(spread, rating, R_Y, PuD_Y, PrD_Y, D_Y) %>% 
+  gather(variable, value) %>%
+  ggplot(aes(y= value))+
+    geom_boxplot()+
+    facet_wrap(~variable, scales = 'free')
 
 ```
 
@@ -62,7 +69,7 @@ stargazer(base.paper[,c(5:12,22:25)],
 
 ```{r ARGENTINA PUBLIC DEBT, message=FALSE, warning=FALSE, include=FALSE}
 
-base.paper %>%
+DBSection3 %>%
   filter( wbcode3 == "ARG", date >= "2010-01-01" ) %>%
   filter (month(date) == 12) %>%
   select ( year, public_debt, PuD_Y, private_debt, PrD_Y) %>%
@@ -113,14 +120,14 @@ Statistics of the cleaned-data:
 ```{r periods selection, echo=FALSE, message=FALSE, warning=FALSE}
 
 
-all_period <- base.paper %>%
+all_period <- DBSection3 %>%
               filter(between(year, 2000, 2018) &  year!=2008 &  year!=2009
                      & rating>3 
-                     & spread< 1000
-                     & !wbcode3 %in% c("LBN", "CHN")
+                     & spread< 1000 
+                     & !wbcode3 %in% c("LBN", "CHN") 
                      & lreserves_1 != "NA" &  lpublicdebt != "NA")
 
-pre_crisis <- base.paper %>%
+pre_crisis <- DBSection3 %>%
               filter(between(year, 2000, 2007) 
                      & rating>3 
                      & spread< 1000
@@ -128,7 +135,7 @@ pre_crisis <- base.paper %>%
                      & lreserves_1 != "NA" &  lpublicdebt != "NA")
 
 
-post_crisis <- base.paper %>%
+post_crisis <- DBSection3 %>%
                filter(year >= 2010 
                       & rating>3 
                       & spread< 1000
@@ -139,40 +146,40 @@ post_crisis <- base.paper %>%
 
 
 
-stargazer(all_period[,c(5:12,22:25)],
+stargazer(as.data.frame(all_period[,c(5:12,22:25)]),
           type = "text",
           iqr = FALSE,
           title="Long Span (unbalanced):2000-Present (2008&2009 excluded)"
           )
 
-# 
-# stargazer(pre_crisis[,c(5:12,22:25)],
-#           type = "text",
-#           iqr = FALSE,
-#           title="Pre crisis (unbalanced): 2000-2007"
-#           )
-# 
-# 
-# stargazer(post_crisis[,c(5:12,22:25)],
-#           type = "text",
-#           iqr = FALSE,
-#           title="Post crisis (unbalanced): 2010-present"
-#           )
 
 
 
 ```
 
 
+```{r boxplots with filters, message=FALSE, warning=FALSE, include=FALSE}
 
+# Tip:  stargazer only supports data.frame objects (not tibbles)
+
+all_period %>%
+  select(spread, rating, R_Y, PuD_Y, PrD_Y, D_Y) %>% 
+  gather(variable, value) %>%
+  ggplot(aes(y= value))+
+    geom_boxplot()+
+    facet_wrap(~variable, scales = 'free')
+
+```
 
 ## KEY HISTOGRAMS
 
 
-```{r Histogramas, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Histograms, echo=FALSE, message=FALSE, warning=FALSE}
 
 
-h1a <- ggplot(base.paper, aes(spread))+
+# Sovereign Spread -------
+
+h1a <- ggplot(DBSection3, aes(spread))+
         geom_histogram()+
         geom_vline(aes(xintercept=mean(spread, na.rm=T)),
                   color="blue", linetype="dashed", size=1)+
@@ -180,47 +187,51 @@ h1a <- ggplot(base.paper, aes(spread))+
         labs(x = "Sovereign Spread")
 
 h1b <- ggplot(all_period, aes(spread))+
-  geom_histogram()+
-  geom_vline(aes(xintercept=mean(spread, na.rm=T)),
-            color="blue", linetype="dashed", size=1)+
-  ggtitle("Histogram: Spread\nWith Filters")+
-  labs(x = "Sovereign Spread")
+       geom_histogram()+
+       geom_vline(aes(xintercept=mean(spread, na.rm=T)),
+                  color="blue", linetype="dashed", size=1)+
+       ggtitle("Histogram: Spread\nWith Filters")+
+       labs(x = "Sovereign Spread")
 
 
 grid.arrange(h1a, h1b, nrow = 1)
 
-h2a <- ggplot(base.paper, aes(R_Y))+
-  geom_histogram()+
-  geom_vline(aes(xintercept=mean(R_Y, na.rm=T)),
-            color="blue", linetype="dashed", size=1)+
-  ggtitle("Histogram: Reserve Ratio\nMaster Data")+
-  labs(x = "Reserve Ratio")
+
+# Reserve Ratios -------
+
+h2a <- ggplot(DBSection3, aes(R_Y))+
+       geom_histogram()+
+       geom_vline(aes(xintercept=mean(R_Y, na.rm=T)),
+                  color="blue", linetype="dashed", size=1)+
+       ggtitle("Histogram: Reserve Ratio\nMaster Data")+
+       labs(x = "Reserve Ratio")
 
 
 h2b <- ggplot(all_period, aes(R_Y))+
-  geom_histogram()+
-  geom_vline(aes(xintercept=mean(R_Y, na.rm=T)),
-            color="blue", linetype="dashed", size=1)+
-  ggtitle("Histogram: Reserve Ratio\nWith Filters")+
-  labs(x = "Reserve Ratio")
+       geom_histogram()+
+       geom_vline(aes(xintercept=mean(R_Y, na.rm=T)),
+                  color="blue", linetype="dashed", size=1)+
+       ggtitle("Histogram: Reserve Ratio\nWith Filters")+
+       labs(x = "Reserve Ratio")
 
 grid.arrange(h2a, h2b, nrow = 1)
 
+# Public Debt Spread -------
 
-h3a <- ggplot(base.paper, aes(PuD_Y))+
-  geom_histogram()+
-  geom_vline(aes(xintercept=mean(PuD_Y, na.rm=T)),
-            color="blue", linetype="dashed", size=1)+
-  ggtitle("Histogram: Public Debt Ratio\nMaster Data")+
-  labs(x = "Debt Ratio")
+h3a <- ggplot(DBSection3, aes(PuD_Y))+
+       geom_histogram()+
+       geom_vline(aes(xintercept=mean(PuD_Y, na.rm=T)),
+                  color="blue", linetype="dashed", size=1)+
+       ggtitle("Histogram: Public Debt Ratio\nMaster Data")+
+       labs(x = "Debt Ratio")
 
 
 h3b <- ggplot(all_period, aes(PuD_Y))+
-  geom_histogram()+
-  geom_vline(aes(xintercept=mean(PuD_Y, na.rm=T)),
-            color="blue", linetype="dashed", size=1)+
-  ggtitle("Histogram: Public Debt Ratio\nWith Filters")+
-  labs(x = "Debt Ratio")
+       geom_histogram()+
+       geom_vline(aes(xintercept=mean(PuD_Y, na.rm=T)),
+                  color="blue", linetype="dashed", size=1)+
+       ggtitle("Histogram: Public Debt Ratio\nWith Filters")+
+       labs(x = "Debt Ratio")
   
 grid.arrange(h3a, h3b, nrow = 1)
 
@@ -282,9 +293,9 @@ kable(resume2,
 Detail public debt with private creditors:
 
 
-```{r Ratios de deuda publica, echo=FALSE, message=FALSE, warning=FALSE}
+```{r public debt ratios, echo=FALSE, message=FALSE, warning=FALSE}
 
-debt_ratio <- base.paper %>%
+debt_ratio <- DBSection3 %>%
   select(wbcode3, date, D_Y) %>%
   filter( month(date) == 12 & date > "2013-01-01" ) %>%
   mutate(D_Y  = round(D_Y *100,1), 
@@ -306,7 +317,7 @@ kable(debt_ratio1) %>%
 
 
 
-```{r Scatter de ratios, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Scatter of ratios, echo=FALSE, message=FALSE, warning=FALSE}
 
 
 
@@ -347,7 +358,7 @@ ggplot(ratios, aes(D_Y, R_Y, color=wbcode3))+
   geom_abline(aes(slope=1, intercept=0))+
   scale_x_continuous(name="Debt Ratio",limits=c(0,max)) +
   scale_y_continuous(name="Reserve Ratio",limits=c(0, max))+
-  ggtitle("Ratios de Reservas y Deuda a diciembre de cada año")+
+  ggtitle("Debt & Reserves Ratios to GPD")+
   theme(legend.title = element_blank(),
         legend.justification = 'center')
 
@@ -421,14 +432,20 @@ kable(resume,
 
 
 
-```{r tasas}
+```{r spreads}
 
-base.paper %>%
+
+
+DBSection3 %>%
   filter(date >= ymd('20180101'), !wbcode3 == 'VEN') %>%
+  group_by(date, rating) %>%
+  summarise(spread = mean(spread, na.rm = TRUE)) %>%
+  ungroup(date, rating) %>%
+  mutate(rating = as.factor(rating)) %>%
   ggplot(aes(x=date))+
-  geom_line(aes(y=spread, colour= wbcode3)) +
-  geom_line(data = base.paper %>% filter(wbcode3 == 'ARG', date >= ymd('20180101')), aes(y=spread), size = 1) +
-  geom_line(aes(y=riskaversion))
+  geom_line(aes(y=spread, colour= rating)) +
+  geom_line(data = DBSection3 %>% filter(wbcode3 == 'ARG', date >= ymd('20180101')), aes(y=spread), size = 1) +
+  geom_line(data = DBSection3 %>% filter(date >= ymd('20180101')), aes(y=(riskaversion*100)-(us10y*100)), size = 1)
 
 ```
 

@@ -1,25 +1,10 @@
----
-title: "Regression Outputs"
-author: "JFG"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-  html_document:
-    df_print: paged
-  word_document: default
----
-
-
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
 rm(list = ls()) # limpiar memoria
 
-options(    tikzDefaultEngine = "xetex",   # Acentos en tablas
-            java.parameters = "-Xmx8000m", # Evitar notación científica
-            knitr.kable.NA = 's/d')
-
-Sys.setlocale("LC_ALL","Spanish")
+Sys.setlocale("LC_ALL","English")
 
 source("libraries/load_packages.R")
 
@@ -32,42 +17,27 @@ fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
 
 
-```{r Carga de Datos, echo=FALSE, message=FALSE, warning=FALSE}
+```{r Load the Data, echo=FALSE, message=FALSE, warning=FALSE}
 
 
-base.paper <- read_csv2("outputs/self_insurance_db.csv")
-# str(base.paper)
+DBSection3 <- read_csv2("outputs/self_insurance_db.csv")
+# str(DBSection3)
 
-base.paper <- base.paper %>% select(-ifscode, -wbcode2, -country_name_ifs)
+DBSection3 <- DBSection3 %>% select(-ifscode, -wbcode2, -country_name_ifs)
 
-# names(base.paper)
-base.paper <- base.paper[,c(1:10,13,11,12,14:29 )]
-base.paper <- base.paper[,c(1:8,12,14:18,22:24)]
 
 ```
 
-
-
-```{r NOMBRE A LAS FILAS, echo=FALSE, message=FALSE, warning=FALSE}
-
-# PONGO LOS ROW.NAMES PARA QUE LOS AVPLOTS MUESTRES LOS OUTLIERS
-base.paper <- base.paper %>%
-  dplyr::mutate(
-    id = sprintf("%s:%s"  , wbcode3 , format.Date(date, "%b-%y")))
-row.names(base.paper) <- base.paper$id  
-
-```
 
 
 ```{r include=FALSE}
 
-#cruzo con stata que me de igual la cantidad de observaciones: check!
 
-# names(base.paper)
-stats_general <- stargazer(base.paper[,c(5:9,15:17)],
-          type="html",
-          out="Outputs/Self_insurance_Stats_Full_Sample.html",
-          title="Summary Statistics: Full Sample")
+# names(DBSection3)
+stats_general <- stargazer(as.data.frame(DBSection3[,c(5:9,15:17)]),
+                 type="html",
+                 out="Outputs/Self_insurance_Stats_Full_Sample.html",
+                 title="Summary Statistics: Full Sample")
 
 
 ```
@@ -75,19 +45,27 @@ stats_general <- stargazer(base.paper[,c(5:9,15:17)],
 
 
 
-```{r filtros, message=FALSE, warning=FALSE, include=FALSE}
+```{r filters, message=FALSE, warning=FALSE, include=FALSE}
 
-clean_base <- subset (na.omit(base.paper), year!=2008 &  year!=2009 
+clean_base <- subset (na.omit(DBSection3), year!=2008 &  year!=2009 
                       & rating>3
                       & spread<= 1000
                       & wbcode3 != "CHN"
                       & wbcode3 != "LBN")
 
 
-sum_stats <- stargazer(clean_base[,c(5:9,15:17)],
-          type="html",
-          out="Outputs/Self_Insurance_Stats_With_Filters.html",
-          title="Summary Statistics: With Filters")
+# We add the row names for the outliers of the AvPlots show clear information
+clean_base <- clean_base %>%
+  dplyr::mutate(
+    id = sprintf("%s:%s"  , wbcode3 , format.Date(date, "%b-%y")))
+row.names(clean_base) <- clean_base$id  
+
+
+
+sum_stats <- stargazer(as.data.frame(clean_base[,c(5:9,15:17)]),
+             type="html",
+             out="Outputs/Self_Insurance_Stats_With_Filters.html",
+             title="Summary Statistics: With Filters")
 
 ```
 
@@ -143,22 +121,22 @@ readr::write_file(countries_dates, "Outputs/Self_Insurance_Countries_Dates.html"
 
 
 
-## Efecto directo, controlado por ratings
+## Direct Effect, controlled by rating
 R1 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base)
 
-## Idem anterior, sin deuda privada
+## Same as R1, without private debt
 R2 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y 
            | country_name_wb| 0 | date,
            data = clean_base)
 
-## Efecto de las reservas en el rating soberano
+## Effect of reserves on sovereign ratings
 R3 <- felm(lrating ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base)
 
-## Efecto directo, sin controlar por rating
+## Direct Effect, not controlled by rating
 R4 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base)
@@ -169,9 +147,7 @@ R4 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
 
-###### ¿Cambia la incidencia relativa de reservas vs. deuda?
-
-## ANTES DE LA CRISIS:
+# Before the GFC:
 
 R5 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
@@ -194,7 +170,7 @@ R7 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
 ```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
 
 
-## DESPUES DE LA CRISIS:
+# AFTER THE GFC:
 
 
 R8 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
@@ -215,63 +191,63 @@ R10 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
 ```
 
 
-```{r salidas1, message=FALSE, warning=FALSE, include=FALSE}
+```{r Regressions1, message=FALSE, warning=FALSE, include=FALSE}
 
 
-salida1 <- stargazer(R1, R2, R4, R3,
-          type="html",
-          dep.var.labels=c("log(spread)","log(rating)"),
-          covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
-                             "log(International Rate)",
-                             "Reserve Ratio","Sovereign Debt Ratio",
-                             "Private Debt Ratio"),
-          out="Outputs/Self_Insurance_Table1.html",
-          title="Elasticities of emerging market spreads to reserves and debt stocks: full sample",
-          no.space=FALSE,
-          digits=3,
-          align=TRUE)
+Regressions1 <- stargazer(R1, R2, R4, R3,
+                type="html",
+                dep.var.labels=c("log(spread)","log(rating)"),
+                covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
+                                   "log(International Rate)",
+                                   "Reserve Ratio","Sovereign Debt Ratio",
+                                   "Private Debt Ratio"),
+                out="Outputs/Self_Insurance_Table1.html",
+                title="Elasticities of emerging market spreads to reserves and debt stocks: full sample",
+                no.space=FALSE,
+                digits=3,
+                align=TRUE)
+      
+
+
+```
+
+
+```{r Regressions2, message=FALSE, warning=FALSE, include=FALSE}
+
+
+Regressions2 <- stargazer(R5, R7, R6,
+                type="html",
+                dep.var.labels=c("log(spread)","log(rating)"),
+                covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
+                                   "log(International Rate)",
+                                   "Reserve Ratio","Sovereign Debt Ratio",
+                                   "Private Debt Ratio"),
+                out="Outputs/Self_Insurance_Table2.html",
+                title="Elasticities of emerging market spreads to reserves and debt stocks: Before International Financial Crisis",
+                no.space=FALSE,
+                digits=3,
+                align=TRUE)
 
 
 
 ```
 
 
-```{r salidas2, message=FALSE, warning=FALSE, include=FALSE}
+```{r Regressions3, message=FALSE, warning=FALSE, include=FALSE}
 
 
-salida2 <- stargazer(R5, R7, R6,
-          type="html",
-          dep.var.labels=c("log(spread)","log(rating)"),
-          covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
-                             "log(International Rate)",
-                             "Reserve Ratio","Sovereign Debt Ratio",
-                             "Private Debt Ratio"),
-          out="Outputs/Self_Insurance_Table2.html",
-          title="Elasticities of emerging market spreads to reserves and debt stocks: Before International Financial Crisis",
-          no.space=FALSE,
-          digits=3,
-          align=TRUE)
-
-
-
-```
-
-
-```{r salidas3, message=FALSE, warning=FALSE, include=FALSE}
-
-
-salida2 <- stargazer(R8, R10, R9,
-          type="html",
-          dep.var.labels=c("log(spread)","log(rating)"),
-          covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
-                             "log(International Rate)",
-                             "Reserve Ratio","Sovereign Debt Ratio",
-                             "Private Debt Ratio"),
-          out="Outputs/Self_Insurance_Table3.html",
-          title="Elasticities of emerging market spreads to reserves and debt stocks: After International Financial Crisis",
-          no.space=FALSE,
-          digits=3,
-          align=TRUE)
+Regressions3 <- stargazer(R8, R10, R9,
+                type="html",
+                dep.var.labels=c("log(spread)","log(rating)"),
+                covariate.labels=c("log(Risk Aversion)","log(Credit Rating)",
+                                   "log(International Rate)",
+                                   "Reserve Ratio","Sovereign Debt Ratio",
+                                   "Private Debt Ratio"),
+                out="Outputs/Self_Insurance_Table3.html",
+                title="Elasticities of emerging market spreads to reserves and debt stocks: After International Financial Crisis",
+                no.space=FALSE,
+                digits=3,
+                align=TRUE)
 
 
 
@@ -302,12 +278,12 @@ coef_names <- c("Full sample, Debt Public and Private",
                 "Full sample, Public Debt only",
                 "Full sample, Effect on Rating",
                 "Full sample, without Rating",
-                "Before IFC, Debt Public and Private",
-                "Before IFC, Effect on Rating",
-                "Before IFC, without Rating",
-                "After IFC, Debt Public and Private",
-                "After IFC, Effect on Rating",
-                "After IFC, without Rating")
+                "Before GFC, Debt Public and Private",
+                "Before GFC, Effect on Rating",
+                "Before GFC, without Rating",
+                "After GFC, Debt Public and Private",
+                "After GFC, Effect on Rating",
+                "After GFC, without Rating")
 
 coef_test$model <- coef_names
 coef_test <- coef_test[c(3,1,2)]

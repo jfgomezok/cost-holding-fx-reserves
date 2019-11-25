@@ -5,13 +5,10 @@ rm(list = ls()) # limpiar memoria
 
 options(scipen = 999) # Evitar notacion cientifica
 
-options(    tikzDefaultEngine = "xetex",   # Acentos en tablas
-            java.parameters = "-Xmx8000m", # Evitar notación científica
-            knitr.kable.NA = 's/d')
-
-Sys.setlocale("LC_ALL","Spanish")
+Sys.setlocale("LC_ALL","English")
 
 source("libraries/load_packages.R")
+source('libraries/PlotLAW.R')
 
 fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
@@ -23,92 +20,58 @@ fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
 
 ```{r carga de datos}
 
-#lectura de la data ifm
-base_mensual <- read.csv2("outputs/law_db.csv")
-base_mensual$date <- as.Date(base_mensual$date)
-# str(base_mensual)
+DBSection4 <- read_csv2("outputs/law_db.csv")
+# str(DBSection4)
 
 
 ```
 
 
-```{r baseanual}
+```{r annual data base}
 
 
 
-base_anual <- base_mensual %>%
-  filter(months(date) == "diciembre") %>%
-  filter(date>= "2004-12-01")
-
-start.date <- min(base_anual$date)
+AnnualDB <- DBSection4 %>%
+  filter(month(date) == 12)
+  # filter(date>= "2004-12-01")
 
 
 
-for (i in 1:dim(base_anual)[1]) {
-  
-  if ( base_anual$date[i] == start.date)
-   {base_anual$PNL_valuation_anual[i] <- base_anual$Valuation.effect.monthly.acum[i]}
-   
-  else
-   {base_anual$PNL_valuation_anual[i] <- base_anual$Valuation.effect.monthly.acum[i] - base_anual$Valuation.effect.monthly.acum[i-1]}
-
-}
-
-
-for (i in 1:dim(base_anual)[1]) {
-  
-  if ( base_anual$date[i] == start.date)
-   {base_anual$PNL_carry_cip[i] <- base_anual$CarryCIP.effect.monthly.acum[i]}
-  
-  else
-   {base_anual$PNL_carry_cip[i] <- base_anual$CarryCIP.effect.monthly.acum[i] - base_anual$CarryCIP.effect.monthly.acum[i-1]}
-
-}
+AnnualDB <- AnnualDB %>%
+  group_by(wbcode3) %>%
+  mutate(PNL_valuation_anual = Valuation.effect.monthly.acum - dplyr::lag(x = Valuation.effect.monthly.acum, n = 1),
+         PNL_carry_cip = CarryCIP.effect.monthly.acum - dplyr::lag(x = CarryCIP.effect.monthly.acum, n = 1),
+         PNL_carry_embi = CarrySpread.effect.monthly.acum - dplyr::lag(x = CarrySpread.effect.monthly.acum, n = 1),
+         PNL.total.cip = PNL_valuation_anual + PNL_carry_cip,
+         PNL_valuation_anual_gdp = PNL_valuation_anual / (MGDP*1000),
+         PNL_carry_cip_gdp = PNL_carry_cip / (MGDP*1000),
+         PNL_carry_embi_gdp = PNL_carry_embi / (MGDP*1000),
+         PNL.total.cip.gdp = PNL.total.cip / (MGDP*1000) )
 
 
+# names(AnnualDB)
 
-for (i in 1:dim(base_anual)[1]) {
-  
-  if ( base_anual$date[i] == start.date)
-   {base_anual$PNL_carry_embi[i] <- base_anual$CarrySpread.effect.monthly.acum[i]}
-  
-  else
-   {base_anual$PNL_carry_embi[i] <- base_anual$CarrySpread.effect.monthly.acum[i] - base_anual$CarrySpread.effect.monthly.acum[i-1]}
-
-}
+AnnualDB_GDP <- AnnualDB %>%
+                select(wbcode3, date, PNL_valuation_anual_gdp, PNL_carry_cip_gdp, PNL.total.cip.gdp, PNL_carry_embi_gdp)
 
 
-
-
-base_anual$PNL.total.cip <- base_anual$PNL_valuation_anual + base_anual$PNL_carry_cip
-
-
-# EN % DEL PBI
-base_anual <- base_anual %>%
-  mutate(PNL_valuation_anual_gdp = PNL_valuation_anual / MGDP) %>%
-  mutate(PNL_carry_cip_gdp = PNL_carry_cip / MGDP ) %>%
-  mutate(PNL_carry_embi_gdp = PNL_carry_embi / MGDP ) %>%
-  mutate(PNL.total.cip.gdp = PNL.total.cip / MGDP )
-
-
-
-base_gdp <- base_anual[,c(1:3, 31,32,34,33)]
-base_niveles <- base_anual[,c(1:3, 27:31)]
+AnnualDB_LEVELS <- AnnualDB %>%
+                   select(wbcode3, date, PNL_valuation_anual, PNL_carry_cip, PNL_carry_embi, PNL.total.cip, PNL_valuation_anual_gdp)
 
 
 ```
 
 ```{r BOX PLOT}
 
-baseaanual_gdp_gather <- base_gdp %>%
-  select(wbcode3,date, PNL.total.cip.gdp, PNL_carry_embi_gdp) %>%
-  rename(LAW = PNL.total.cip.gdp) %>%
-  rename(Self_Insurance = PNL_carry_embi_gdp) %>%
-  gather(., Methodology, value, 3:4) %>%
-  mutate(value = value *100)
+GatherGDP <- AnnualDB_GDP %>%
+             select(wbcode3,date, PNL.total.cip.gdp, PNL_carry_embi_gdp) %>%
+             rename(LAW = PNL.total.cip.gdp) %>%
+             rename(Self_Insurance = PNL_carry_embi_gdp) %>%
+             gather(., Methodology, value, 3:4) %>%
+             mutate(value = value *100)
 
 
-boxplot_chart <- ggplot(baseaanual_gdp_gather, aes(x=wbcode3, y=value, fill=Methodology))+
+boxplot_chart <- ggplot(GatherGDP, aes(x=wbcode3, y=value, fill=Methodology))+
   geom_boxplot(outlier.colour="black", outlier.shape=16,  outlier.size=2)+
   theme_minimal() +
   # geom_jitter(width = 0.2)+
@@ -116,7 +79,7 @@ boxplot_chart <- ggplot(baseaanual_gdp_gather, aes(x=wbcode3, y=value, fill=Meth
   labs(x="")+
   theme(legend.position="bottom")
 
-  ggsave("outputs/law_boxplot_chart.png", width = 7, height = 4)
+  # ggsave("outputs/law_boxplot_chart.png", width = 7, height = 4)
 
 
 
@@ -126,7 +89,7 @@ boxplot_chart <- ggplot(baseaanual_gdp_gather, aes(x=wbcode3, y=value, fill=Meth
 ```{r cuadro resumen cip}
 
 
-cuadro.resumen <- base_gdp %>%
+SummaryTable <- AnnualDB_GDP %>%
   filter(date != c("2008-12-01", "2009-12-01")) %>%
   # filter(wbcode3 == "ARG") %>%
   group_by(wbcode3)  %>%
@@ -136,7 +99,7 @@ cuadro.resumen <- base_gdp %>%
             mean_si = round(mean(PNL_carry_embi_gdp, na.rm=TRUE)*100,2))
 
      
-kable(cuadro.resumen,
+kable(SummaryTable,
       col.names = c("Country", "Valuation", "Carry(1)", "Total","Self Insurance (2)"),
         caption = "As % of GDP" ) %>%
   footnote(number = c("Proxied by the Covered Interest Parity", "Proxied by EMBI + UST Term Premium (5y-Fed Funds)")) %>%
@@ -156,17 +119,17 @@ kable(cuadro.resumen,
 
 
 
-cuadro.resumen.arg <- base_gdp %>%
+SummaryTableArg <- AnnualDB_GDP %>%
   # filter(date != c("2008-12-01", "2009-12-01")) %>%
   filter(wbcode3 == "ARG") %>%
-  select (country.name, date, PNL_valuation_anual_gdp, PNL_carry_cip_gdp, PNL.total.cip.gdp, PNL_carry_embi_gdp) %>%
-  mutate(PNL_valuation_anual_gdp = round(PNL_valuation_anual_gdp*100,2)) %>%
-  mutate(PNL_carry_cip_gdp = round(PNL_carry_cip_gdp*100,2)) %>%
-  mutate(PNL.total.cip.gdp = round(PNL.total.cip.gdp*100,2)) %>%
-  mutate(PNL_carry_embi_gdp = round(PNL_carry_embi_gdp*100,2)) 
+  select (wbcode3, date, PNL_valuation_anual_gdp, PNL_carry_cip_gdp, PNL.total.cip.gdp, PNL_carry_embi_gdp) %>%
+  mutate(PNL_valuation_anual_gdp = round(PNL_valuation_anual_gdp*100,2),
+         PNL_carry_cip_gdp = round(PNL_carry_cip_gdp*100,2),
+         PNL.total.cip.gdp = round(PNL.total.cip.gdp*100,2),
+         PNL_carry_embi_gdp = round(PNL_carry_embi_gdp*100,2)) 
 
 
-kable(cuadro.resumen.arg,
+kable(SummaryTableArg,
       col.names = c("Country", "date", "Valuation", "Carry(1)", "Total","Self Insurance (2)"),
         caption = "As % of GDP" ) %>%
   footnote(number = c("Proxied by the Covered Interest Parity", "Proxied by EMBI + UST Term Premium (5y-Fed Funds)")) %>%
@@ -185,16 +148,16 @@ kable(cuadro.resumen.arg,
 ```{r chart }
 
 
-chart1 <- base_gdp %>%
-  select(wbcode3,date, country.name , PNL.total.cip.gdp, PNL_valuation_anual_gdp, PNL_carry_cip_gdp) %>%
+chart1 <- AnnualDB_GDP %>%
+  select(wbcode3,date, PNL.total.cip.gdp, PNL_valuation_anual_gdp, PNL_carry_cip_gdp) %>%
   rename(Total_Result = PNL.total.cip.gdp) %>%
   rename(Valuation_Result = PNL_valuation_anual_gdp) %>%
   rename(Carry_Result = PNL_carry_cip_gdp) %>%
   mutate(date2 = as.Date(format(date, "%Y-01-01"))) %>%
-  gather(., Reference, value, 4:6) %>%
+  gather(., Reference, value, 4:5) %>%
   mutate(value = value *100)
 
-str(chart1)
+# str(chart1)
 
 # Comment: para que el grafico muestre bien los años, tuve que cambiarlos desde YYYY-12-01 a YYYY-01-01 en una nueva columna y grafico sobre esos.
 
@@ -215,6 +178,7 @@ chart1 %>%
        y="Percent of GDP",
        shape=NULL)+
   scale_x_date("",date_breaks = "2 year",labels = date_format("'%y"))+
+  theme_minimal() +
   theme(legend.position="bottom",
         # plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
         panel.border = element_rect(fill = NA, colour="gray40", size=.5),
@@ -234,7 +198,7 @@ chart1 %>%
 
 ```{r grafico de tasas}
 
-tasas <- base_mensual %>%
+tasas <- DBSection4 %>%
   select(wbcode3, date, TNA.Carry, TNA.spread) %>%
   rename(CIP = TNA.Carry) %>%
   rename(EMBI_USTtm = TNA.spread) %>%
@@ -246,7 +210,8 @@ ggplot(tasas, aes(x=date, y=value, color=TNA))+
   geom_line()+
   facet_wrap(~wbcode3, scales = "free")+
   scale_x_date(labels = date_format("%y"), date_breaks = "2 year","")+
-  theme(legend.position="bottom")
+  theme(legend.position="top",
+        axis.line = element_blank())
 
 ```
 
@@ -257,250 +222,21 @@ ggplot(tasas, aes(x=date, y=value, color=TNA))+
 ```{r grafico en niveles, eval=FALSE, include=FALSE}
 
 
-chart_df_2  <- base_mensual %>%
+chart_df_2  <- DBSection4 %>%
   select(wbcode3, date, NER, Valuation.effect.monthly.acum, CarryCIP.effect.monthly.acum, PNL.total.monthly.acum1) %>%
-  mutate(Valuation.effect.monthly.acum = Valuation.effect.monthly.acum/1000) %>%
-  mutate(CarryCIP.effect.monthly.acum = CarryCIP.effect.monthly.acum/1000) %>%
-  mutate(PNL.total.monthly.acum1 = PNL.total.monthly.acum1 / 1000)
+  mutate(Valuation.effect.monthly.acum = Valuation.effect.monthly.acum/1000,
+         CarryCIP.effect.monthly.acum = CarryCIP.effect.monthly.acum/1000,
+         PNL.total.monthly.acum1 = PNL.total.monthly.acum1 / 1000)
+
+PlotARG <- LAWPlot(country = 'ARG')
+PlotBRA <- LAWPlot(country = 'BRA')
+PlotKOR <- LAWPlot(country = 'KOR')
+PlotMEX <- LAWPlot(country = 'MEX')
+PlotRUS <- LAWPlot(country = 'RUS')
+PlotTUR <- LAWPlot(country = 'TUR')
 
 
-area <- "ARG"
-  
-df.area <- subset(chart_df_2, wbcode3==area)
-  
-  
-max.prim.arg <- max(df.area[,c(4:6)],na.rm = TRUE)
-min.prim.arg <- min(df.area[,c(4:6)],na.rm = TRUE)
-max.sec.arg <- max(df.area[,3],na.rm = TRUE)
-min.sec.arg <- min(df.area[,3],na.rm = TRUE)
-f1.arg <- (max.prim.arg - min.prim.arg) / (max.sec.arg  - min.sec.arg)
-df.area$NERadj <- (df.area$NER - max.sec.arg) * f1.arg + max.prim.arg
-  
-  
-  
-chart_df_2_gather <- gather(df.area, Reference, value, 3:7)
-
-
-p.arg <- chart_df_2_gather %>%  
-  ggplot(aes(date, value, group=Reference)) +
-  geom_area(data=subset(chart_df_2_gather, Reference != "PNL.total.monthly.acum1" & Reference != "NER" & Reference != "NERadj"),
-            aes(fill=Reference),
-            position = "stack")+
-  geom_point(data=subset(chart_df_2_gather, Reference == "PNL.total.monthly.acum1"),
-            aes(color="PNL Total"),
-            color='black',
-            size=0.8)+
-  facet_wrap(~ wbcode3, scales = "free")+
-  geom_line(data=subset(chart_df_2_gather, Reference == "NERadj"),
-            aes(color="Exchange Rate"),
-            color="black")+
-  scale_y_continuous("",
-                     sec.axis =  sec_axis(~ (.-max.prim.arg) / f1.arg +max.sec.arg ,
-                                          name = paste0(area,"/USD") ))+
-  scale_x_date("",date_breaks = "2 year",labels = date_format("'%y"))+
-  theme(legend.position="none")
-
-
-
-area <- "BRA"
-  
-df.area <- subset(chart_df_2, wbcode3==area)
-  
-  
-max.prim.bra <- max(df.area[,c(4:6)],na.rm = TRUE)
-min.prim.bra <- min(df.area[,c(4:6)],na.rm = TRUE)
-max.sec.bra <- max(df.area[,3],na.rm = TRUE)
-min.sec.bra <- min(df.area[,3],na.rm = TRUE)
-f1.bra <- (max.prim.bra - min.prim.bra) / (max.sec.bra  - min.sec.bra)
-df.area$NERadj <- (df.area$NER - max.sec.bra) * f1.bra + max.prim.bra
-  
-  
-  
-chart_df_2_gather <- gather(df.area, Reference, value, 3:7)
-
-
-p.bra <- chart_df_2_gather %>%  
-  ggplot(aes(date, value, group=Reference)) +
-  geom_area(data=subset(chart_df_2_gather, Reference != "PNL.total.monthly.acum1" & Reference != "NER" & Reference != "NERadj"),
-            aes(fill=Reference),
-            position = "stack")+
-  geom_point(data=subset(chart_df_2_gather, Reference == "PNL.total.monthly.acum1"),
-            aes(color="PNL Total"),
-            color='black',
-            size=0.8)+
-  facet_wrap(~ wbcode3, scales = "free")+
-  geom_line(data=subset(chart_df_2_gather, Reference == "NERadj"),
-            aes(color="Exchange Rate"),
-            color="black")+
-  scale_y_continuous("",
-                     sec.axis =  sec_axis(~ (.-max.prim.bra) / f1.bra +max.sec.bra ,
-                                          name = paste0(area,"/USD") ))+
-  scale_x_date("",date_breaks = "2 year",labels = date_format("'%y"))+
-  theme(legend.position="none")
-
-
-
-
-
-area <- "KOR"
-  
-df.area <- subset(chart_df_2, wbcode3==area)
-  
-  
-max.prim.kor <- max(df.area[,c(4:6)],na.rm = TRUE)
-min.prim.kor <- min(df.area[,c(4:6)],na.rm = TRUE)
-max.sec.kor <- max(df.area[,3],na.rm = TRUE)
-min.sec.kor <- min(df.area[,3],na.rm = TRUE)
-f1.kor <- (max.prim.kor - min.prim.kor) / (max.sec.kor  - min.sec.kor)
-df.area$NERadj <- (df.area$NER - max.sec.kor) * f1.kor + max.prim.kor
-  
-  
-  
-chart_df_2_gather <- gather(df.area, Reference, value, 3:7)
-
-
-p.kor <- chart_df_2_gather %>%  
-  ggplot(aes(date, value, group=Reference)) +
-  geom_area(data=subset(chart_df_2_gather, Reference != "PNL.total.monthly.acum1" & Reference != "NER" & Reference != "NERadj"),
-            aes(fill=Reference),
-            position = "stack")+
-  geom_point(data=subset(chart_df_2_gather, Reference == "PNL.total.monthly.acum1"),
-            aes(color="PNL Total"),
-            color='black',
-            size=0.8)+
-  facet_wrap(~ wbcode3, scales = "free")+
-  geom_line(data=subset(chart_df_2_gather, Reference == "NERadj"),
-            aes(color="Exchange Rate"),
-            color="black")+
-  scale_y_continuous("",
-                     sec.axis =  sec_axis(~ (.-max.prim.kor) / f1.kor +max.sec.kor ,
-                                          name = paste0(area,"/USD") ))+
-  scale_x_date("",date_breaks = "2 year",labels = date_format("'%y"))+
-  theme(legend.position="none")
-
-
-
-area <- "MEX"
-  
-df.area <- subset(chart_df_2, wbcode3==area)
-  
-  
-max.prim.mex <- max(df.area[,c(4:6)],na.rm = TRUE)
-min.prim.mex <- min(df.area[,c(4:6)],na.rm = TRUE)
-max.sec.mex <- max(df.area[,3],na.rm = TRUE)
-min.sec.mex <- min(df.area[,3],na.rm = TRUE)
-f1.mex <- (max.prim.mex - min.prim.mex) / (max.sec.mex  - min.sec.mex)
-df.area$NERadj <- (df.area$NER - max.sec.mex) * f1.mex + max.prim.mex
-  
-  
-  
-chart_df_2_gather <- gather(df.area, Reference, value, 3:7)
-
-
-p.mex <- chart_df_2_gather %>%  
-  ggplot(aes(date, value, group=Reference)) +
-  geom_area(data=subset(chart_df_2_gather, Reference != "PNL.total.monthly.acum1" & Reference != "NER" & Reference != "NERadj"),
-            aes(fill=Reference),
-            position = "stack")+
-  geom_point(data=subset(chart_df_2_gather, Reference == "PNL.total.monthly.acum1"),
-            aes(color="PNL Total"),
-            color='black',
-            size=0.8)+
-  facet_wrap(~ wbcode3, scales = "free")+
-  geom_line(data=subset(chart_df_2_gather, Reference == "NERadj"),
-            aes(color="Exchange Rate"),
-            color="black")+
-  scale_y_continuous("",
-                     sec.axis =  sec_axis(~ (.-max.prim.mex) / f1.mex +max.sec.mex ,
-                                          name = paste0(area,"/USD") ))+
-  scale_x_date("",date_breaks = "2 year",labels = date_format("'%y"))+
-  theme(legend.position="none")
-
-
-
-
-area <- "RUS"
-  
-df.area <- subset(chart_df_2, wbcode3==area)
-  
-  
-max.prim.rus <- max(df.area[,c(4:6)],na.rm = TRUE)
-min.prim.rus <- min(df.area[,c(4:6)],na.rm = TRUE)
-max.sec.rus <- max(df.area[,3],na.rm = TRUE)
-min.sec.rus <- min(df.area[,3],na.rm = TRUE)
-f1.rus <- (max.prim.rus - min.prim.rus) / (max.sec.rus  - min.sec.rus)
-df.area$NERadj <- (df.area$NER - max.sec.rus) * f1.rus + max.prim.rus
-  
-  
-  
-chart_df_2_gather <- gather(df.area, Reference, value, 3:7)
-
-
-p.rus <- chart_df_2_gather %>%  
-  ggplot(aes(date, value, group=Reference)) +
-  geom_area(data=subset(chart_df_2_gather, Reference != "PNL.total.monthly.acum1" & Reference != "NER" & Reference != "NERadj"),
-            aes(fill=Reference),
-            position = "stack")+
-  geom_point(data=subset(chart_df_2_gather, Reference == "PNL.total.monthly.acum1"),
-            aes(color="PNL Total"),
-            color='black',
-            size=0.8)+
-  facet_wrap(~ wbcode3, scales = "free")+
-  geom_line(data=subset(chart_df_2_gather, Reference == "NERadj"),
-            aes(color="Exchange Rate"),
-            color="black")+
-  scale_y_continuous("",
-                     sec.axis =  sec_axis(~ (.-max.prim.rus) / f1.rus +max.sec.rus ,
-                                          name = paste0(area,"/USD") ))+
-  scale_x_date("",date_breaks = "2 year",labels = date_format("'%y"))+
-  theme(legend.position="none")
-
-
-
-area <- "TUR"
-  
-df.area <- subset(chart_df_2, wbcode3==area)
-  
-  
-max.prim.tur <- max(df.area[,c(4:6)],na.rm = TRUE)
-min.prim.tur <- min(df.area[,c(4:6)],na.rm = TRUE)
-max.sec.tur <- max(df.area[,3],na.rm = TRUE)
-min.sec.tur <- min(df.area[,3],na.rm = TRUE)
-f1.tur <- (max.prim.tur - min.prim.tur) / (max.sec.tur  - min.sec.tur)
-df.area$NERadj <- (df.area$NER - max.sec.tur) * f1.tur + max.prim.tur
-  
-  
-  
-chart_df_2_gather <- gather(df.area, Reference, value, 3:7)
-
-
-p.tur <- chart_df_2_gather %>%  
-  ggplot(aes(date, value, group=Reference)) +
-  geom_area(data=subset(chart_df_2_gather, Reference != "PNL.total.monthly.acum1" & Reference != "NER" & Reference != "NERadj"),
-            aes(fill=Reference),
-            position = "stack")+
-  geom_point(data=subset(chart_df_2_gather, Reference == "PNL.total.monthly.acum1"),
-            aes(color="PNL Total"),
-            color='black',
-            size=0.8)+
-  facet_wrap(~ wbcode3, scales = "free")+
-  geom_line(data=subset(chart_df_2_gather, Reference == "NERadj"),
-            aes(color="Exchange Rate"),
-            color="black")+
-  scale_y_continuous("",
-                     sec.axis =  sec_axis(~ (.-max.prim.tur) / f1.tur +max.sec.tur ,
-                                          name = paste0(area,"/USD") ))+
-  scale_x_date("",date_breaks = "2 year",labels = date_format("'%y"))+
-  theme(legend.position="none")
-
-
-
-
-
-
-
-plot_grid(p.arg,p.bra, p.kor, p.mex, p.rus, p.tur)
-
+plot_grid(PlotARG,PlotBRA,PlotKOR, PlotMEX, PlotRUS, PlotTUR)
 
 
 ```

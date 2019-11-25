@@ -43,5 +43,5 @@ bofahy <- JSON %>%
 write_csv2(x    = bofahy,
            path = "raw_data/risk.aversion.csv")
 
-rm(bofahy,  fred, bofahy_query)
+rm(bofahy, Request,  Response, JSON,  url, category, file_type, frequency, aggregation_method, path )
 print("risk aversion ok!")
