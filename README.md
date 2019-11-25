@@ -36,30 +36,29 @@ cost-holding-fx-reserves.Rproj).
     `sample_stlouis_api_key.R` and then change its name to
     `stlouis_api_key.R`.
 
-## Directory structure
+## Files structure
 
-1.  `Data Generator.R` will install and load the required packages,
+1.  `data_generator.R` will install and load the required packages,
     download the data from public warehouses (i.e IMF, WB, St.Louis FED,
-    S\&P), save it in ‘Inputs’, merge it and build two panels saved in
-    ‘Outputs’:
+    S\&P), save it in folder ‘raw\_data’, merge it and build two panels
+    saved in folder ‘Outputs’:
     
-      - self\_insurance\_db.csv is the section 3 master data base
-        (‘DB’).
+      - self\_insurance\_db.csv is the section 3 data base (‘DB’).
       - law\_db.csv is the section 4 master DB.
 
-2.  Once you got the two panels, each section of the papaer has itw own
-    markdown to perform analysis.
+2.  Once you got the two panels, each section of the paper has its own
+    markdown to perform analysis, as follows:
 
-3.  `Self_Insurance_DataAnlaysis.Rmd` load the section 3 master DB and
-    deep into the numbers, particulary:
+3.  `Self_Insurance_DataAnlaysis.Rmd` load the section 3 DB and deep
+    into the numbers, particulary:
     
       - Run some histograms to detect outliers
       - Perform some analystics to have a clear view of time spans of
         the selected countries.
       - Quick look to reserves and debt ratios
 
-4.  `Self_Insurance_Regressions.Rmd` load the section 3 master DB and
-    performs the regressions.
+4.  `Self_Insurance_Regressions.Rmd` load the section 3 DB and performs
+    the regressions.
 
 5.  `Law_Model_analysis.Rmd` load the section 4 master DB and perform
     the analytics.
