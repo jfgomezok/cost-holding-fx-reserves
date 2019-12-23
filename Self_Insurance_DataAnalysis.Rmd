@@ -65,6 +65,95 @@ DBSection3 %>%
 ```
 
 
+Let's take a look to the hoarding of reserves, country by country:
+
+```{r}
+
+# names(DBSection3)
+
+country.list <- list(unique(DBSection3$wbcode3))
+
+data <- DBSection3 %>% 
+  select(wbcode3, date, reserves) %>% 
+  # filter(date >= ymd('20020101')) %>% 
+  group_by(wbcode3) %>% 
+  mutate(varnorm = reserves - reserves[1]) %>% 
+  ungroup(wbcode3)
+
+# min(data$date)
+
+data %>% 
+  filter(date %in% c(ymd('20181201'))) %>% 
+  mutate(wbcode3 = fct_reorder(wbcode3, varnorm)) %>% 
+  na.omit() %>% 
+  ggplot()+
+  geom_col(
+    mapping = aes(x=wbcode3, y=varnorm, fill=wbcode3)
+  ) +
+  scale_fill_viridis_d(direction = -1)+
+  coord_flip()+
+  labs(
+    title = 'Cumulative Reserves Hoarded',
+    subtitle = 'Since 1998' 
+  ) +
+  theme(
+    legend.position = 'none',
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    axis.line.x = element_blank(),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+
+aux <- data %>%
+  na.omit() %>%
+  filter(!wbcode3 %in% c("CHN")) %>%
+  select(wbcode3, varnorm) %>%
+  group_by(wbcode3) %>% 
+  summarise(max = max(varnorm, na.rm = TRUE)) %>% 
+  arrange(desc(max)) %>% 
+  mutate(size = ifelse(max > 150, 1.2,
+                ifelse(wbcode3 == "ARG", 1.2, 0.5)))
+
+sizes <- aux$size
+names(sizes) <- aux$wbcode3
+
+ggplot()+
+  geom_line(
+    data    = na.omit(data) %>% filter(!wbcode3 %in% c("CHN")),
+    mapping = aes(x = as.Date(date), y = varnorm, color=wbcode3, size=wbcode3)
+  ) +
+  geom_label(
+    data    = na.omit(data) %>% filter(!wbcode3 %in% c("CHN"), date == max(date)) %>% 
+              filter(varnorm > 150 | wbcode3 == "ARG"),
+    mapping = aes(x = as.Date(date), y = varnorm, color=wbcode3, label = wbcode3),
+    hjust = -0.05 
+  ) +
+  scale_x_date(
+    limits = c(as.Date('1997-12-01'), as.Date('2020-05-01'))
+  ) +
+  geom_hline(yintercept = 0)+
+  scale_size_manual(values = sizes)+
+  scale_color_viridis_d(direction = -1) +
+  labs(
+    title = 'Hoarding of Reserves (Ex-China)',
+    subtitle = 'Based 0 in Dec97 - figures in billion of dollars' 
+  ) +
+  theme(
+    legend.position = 'none',
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    axis.line = element_blank(),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+
+```
+
+We find that, no surprisingly, China has unproportionally accumulated international reserves.
+
+
+
 ## A look to Argentina's public debt
 
 ```{r ARGENTINA PUBLIC DEBT, message=FALSE, warning=FALSE, include=FALSE}
