@@ -38,9 +38,7 @@ Non-Git users will probably find it easier to download the zip file by clicking 
 
 * [Rstudio](https://www.rstudio.com/products/rstudio/download/)
 
-* Api key of the Federal Reserve Bank of San Louis, available at: https://research.stlouisfed.org/docs/api/api_key.html.
-
-* Once in hand with your personal Api key, write it in line 6 of `sample_stlouis_api_key.R` and then change its name to `stlouis_api_key.R`.
+* Api key of the Federal Reserve Bank of San Louis, available at: https://research.stlouisfed.org/docs/api/api_key.html. Once in hand, write it in line 6 of `sample_stlouis_api_key.R` and then change its name to `stlouis_api_key.R`.
 
 
 ## Files structure
@@ -52,11 +50,9 @@ Non-Git users will probably find it easier to download the zip file by clicking 
 
 2. `Exploratory_Data_Analysis.Rmd` explores the data through tables and plots.
   
-Once you got the two panels, each section of the paper has its own markdown to perform analysis, as follows:
+3. `Self_Insurance_Regressions.Rmd` loads the section 3 DB and performs the regressions.
 
-4. `Self_Insurance_Regressions.Rmd` loads the section 3 DB and performs the regressions.
-
-5. `Law_Model_analysis.Rmd` loads the section 4 DB and perform the analytics.
+4. `Law_Model_analysis.Rmd` loads the section 4 DB and perform the analytics.
 
 
 
