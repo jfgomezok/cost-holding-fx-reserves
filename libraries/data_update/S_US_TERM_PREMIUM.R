@@ -27,6 +27,7 @@ JSON <- fromJSON(Response, flatten = TRUE) %>%
 US_tp <- JSON %>%
   select(observations.date, observations.value) %>%
   set_names(c('date', 'US_TP')) %>%
+  filter(US_TP != ".") %>% 
   mutate(date = parse_date(date),
          US_TP = as.numeric(US_TP))
 

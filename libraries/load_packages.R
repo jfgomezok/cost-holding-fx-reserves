@@ -1,9 +1,10 @@
 
-############ CARGA DE PAQUETES ################################
+###############################################################
+################ LOAD PACKAGES ################################
 ###############################################################
 
 
-
+# All used packages are on CRAN.
 
 if ( !require("pacman") ) install.packages("pacman")
 pacman::p_load( lfe, stargazer, tidyverse, tinytex, 

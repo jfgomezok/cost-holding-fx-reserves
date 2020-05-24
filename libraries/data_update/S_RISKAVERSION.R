@@ -30,6 +30,7 @@ JSON <- fromJSON(Response, flatten = TRUE) %>%
 bofahy <- JSON %>%
           select(observations.date, observations.value) %>%
           set_names(c('date', 'riskaversion')) %>%
+          filter(riskaversion != ".") %>% 
           mutate(date = parse_date(date),
                  riskaversion = as.numeric(riskaversion))
 

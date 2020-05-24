@@ -1,6 +1,8 @@
 
 #TODO: ADD AN INTRO
 
+#Creation of output folder
+if (!file.exists(file.path("outputs"))){dir.create(file.path("outputs"))}
 
 
 #################################################################
@@ -239,10 +241,10 @@ DBSection3 <- DBSection3 %>%
 
 
 write_csv2(x    = DBSection3,
-           path = "Outputs/self_insurance_db.csv")
+           path = "outputs/self_insurance_db.csv")
 
 write.dta(DBSection3,
-          file = "Outputs/self_insurance_db.dta",
+          file = "outputs/self_insurance_db.dta",
           convert.factors = "string")
 
 # str(DBSection3)

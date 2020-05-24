@@ -1,14 +1,15 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 
 ```{r setup, include=FALSE, echo=FALSE}
 
 rm(list = ls()) 
-
 Sys.setlocale("LC_ALL","English")
-
 source("libraries/load_packages.R")
-
 OutputDate <- format( as.Date(Sys.Date()) , "%Y%m%d" )
-
 
 ```
 
@@ -24,15 +25,85 @@ We gather data from:
 
 ```{r DataLoad, echo=FALSE, message=FALSE, warning=FALSE}
 
+RtoImports <- read_csv2("raw_data/reserves_to_imports.csv")
 DBSection3 <- read_csv2("outputs/self_insurance_db.csv")
-
 # str(DBSection3)
-
-
 DBSection3 <- DBSection3 %>% select(-ifscode, -wbcode2, -country_name_ifs)
 
+```
+
+
+# Total reserves in month of imports:
+
+```{r}
+
+labels.shape <- c("HIC" = 21,
+                 "MIC" = 23)
+
+labels.text <- c("HIC" = "High Income  Countries",
+                 "MIC" = "Middle Income Countries")
+
+RtoImports %>% 
+  filter(wbcode3 %in% c("HIC", "MIC")) %>% 
+  ggplot() +
+  geom_line(
+      mapping  = aes(x = date, y = value, color = wbcode3),
+      size     = 1
+      # linetype = 'dotted'
+    ) +
+  geom_point(
+      mapping = aes(x = date, y = value, color = wbcode3, shape = wbcode3),
+      size    = 1.4,
+      # shape   = 21,
+      stroke  = 1.1,
+      fill    = 'white'
+      # alpha   = 0.5
+    ) +
+  scale_shape_manual(
+    values = labels.shape,
+    labels = labels.text
+    )+
+   scale_fill_brewer(
+    labels = labels.text,
+    type   = 'qual',
+    palette = 'Accent'
+    )+
+  scale_color_brewer(
+    labels = labels.text,
+    type = 'qual',
+    palette = 'Accent'
+    )+
+  annotate(
+    geom  = 'text',
+    x     =  ymd('20120101'),
+    y     = 4,
+    label = 'Rule of thumb (3x)'
+  )+
+  geom_hline(
+    yintercept = 3,
+    linetype   = 'dashed',
+    color      = 'grey'
+  ) + 
+  labs(
+    title = 'Total Reserves in month of imports',
+    caption = 'Source: The World Bank'
+  ) +
+  theme_bw()+
+  theme(
+    plot.title         = element_text(hjust = 0.5), 
+    axis.ticks         = element_blank(),
+    panel.border       = element_blank(),
+    axis.title         = element_blank(),
+    legend.position    = 'top',
+    legend.title       = element_blank(),
+    # legend.text        = element_text(color = )
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank()
+  )
 
 ```
+
+
 
 
 ## Statistics of the master data base:
@@ -45,7 +116,7 @@ DBSection3 %>%
   select(spread, us10y, riskaversion, reserves, public_debt, private_debt, rating, MGDP, R_Y, PuD_Y, PrD_Y, D_Y) %>% as.data.frame() %>%
   stargazer(type = 'text',
             title = "Master Data Base, with NAs",
-            out=    "Outputs/Data_Analysis_Table1.html")
+            out=    "outputs/Data_Analysis_Table1.html")
 
 ```
 
@@ -440,14 +511,27 @@ max <- round(max(max_x, max_y),0)+5
 #   shadow_wake(wake_length = 0.1, alpha = FALSE)
 
 
-
-ggplot(ratios, aes(D_Y, R_Y, color=wbcode3))+
-  geom_point(alpha = 0.7)+
-  # geom_text(aes(label=ifelse(wbcode3=="ARG","ARG",'')), hjust=0, vjust=0)+
+# ratios %>% 
+  # mutate(wbcode3 = fct_lump(wbcode3, ))
+ggplot()+
+  geom_point(
+    data    = ratios, 
+    mapping = aes(D_Y/100, R_Y/100, color=wbcode3),
+    alpha   = 0.7
+    )+
   geom_abline(aes(slope=1, intercept=0))+
-  scale_x_continuous(name="Debt Ratio",limits=c(0,max)) +
-  scale_y_continuous(name="Reserve Ratio",limits=c(0, max))+
+  scale_x_continuous(
+    name   = "Debt Ratio",
+    limits = c(0,max/100),
+    labels = percent_format()
+    ) +
+  scale_y_continuous(
+    name   = "Reserve Ratio",
+    limits = c(0, max/100),
+    labels = percent_format()
+    )+
   ggtitle("Debt & Reserves Ratios to GPD")+
+  theme_minimal()+
   theme(legend.title = element_blank(),
         legend.justification = 'center')
 

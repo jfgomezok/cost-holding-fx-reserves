@@ -9,7 +9,6 @@
 
 # Session Data files
 .RData
-README.Rmd
 stlouis_api_key.R
 
 

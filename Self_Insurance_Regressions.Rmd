@@ -1,45 +1,34 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-
 rm(list = ls()) # limpiar memoria
-
 Sys.setlocale("LC_ALL","English")
-
 source("libraries/load_packages.R")
-
 fecha.salida <- format( as.Date(Sys.Date()) , "%Y%m%d" )
-
-# pacman
-
 ```
 
 
 
 
 ```{r Load the Data, echo=FALSE, message=FALSE, warning=FALSE}
-
-
 DBSection3 <- read_csv2("outputs/self_insurance_db.csv")
 # str(DBSection3)
-
 DBSection3 <- DBSection3 %>% select(-ifscode, -wbcode2, -country_name_ifs)
-
-
 ```
 
 
 
-```{r include=FALSE}
-
-
+```{r General Stats, include=FALSE}
 # names(DBSection3)
 stats_general <- stargazer(as.data.frame(DBSection3[,c(5:9,15:17)]),
                  type="html",
-                 out="Outputs/Self_insurance_Stats_Full_Sample.html",
+                 out="outputs/Self_insurance_Stats_Full_Sample.html",
                  title="Summary Statistics: Full Sample")
-
-
 ```
 
 
@@ -64,7 +53,7 @@ row.names(clean_base) <- clean_base$id
 
 sum_stats <- stargazer(as.data.frame(clean_base[,c(5:9,15:17)]),
              type="html",
-             out="Outputs/Self_Insurance_Stats_With_Filters.html",
+             out="outputs/Self_Insurance_Stats_With_Filters.html",
              title="Summary Statistics: With Filters")
 
 ```
@@ -73,9 +62,6 @@ sum_stats <- stargazer(as.data.frame(clean_base[,c(5:9,15:17)]),
 
 
 ```{r Countries and Period Covered, echo=FALSE, warning=FALSE}
-
-
-
 country.list <- as.list(unique(clean_base$country_name_wb))
 resume2 <- data.frame()
 
@@ -106,20 +92,13 @@ countries_dates <- kable(resume2, "html",
                 full_width = F,
                 position = "left")
 
-readr::write_file(countries_dates, "Outputs/Self_Insurance_Countries_Dates.html")
-  
-
-
-
-
+readr::write_file(countries_dates, "outputs/Self_Insurance_Countries_Dates.html")
 ```
 
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
-
-
+```{r Regressions - full sample, echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
 
 ## Direct Effect, controlled by rating
 R1 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
@@ -140,15 +119,11 @@ R3 <- felm(lrating ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
 R4 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base)
-
-
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
-
+```{r Regressions - Before the GFC, echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
 # Before the GFC:
-
 R5 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base, subset = year<=2007)
@@ -162,17 +137,11 @@ R7 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base, subset = year<=2007)
 
-
-
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
-
-
+```{r Regressions - After the GFC, echo=FALSE, message=FALSE, warning=FALSE, , echo=FALSE}
 # AFTER THE GFC:
-
-
 R8 <- felm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base, subset = year>=2010)
@@ -185,14 +154,10 @@ R9 <- felm(lrating ~ lriskaversion +  lus10y + R_Y + PuD_Y + PrD_Y
 R10 <- felm(lspread ~ lriskaversion + lus10y + R_Y + PuD_Y + PrD_Y
            | country_name_wb| 0 | date,
            data = clean_base, subset = year>=2010)
-
-
-
 ```
 
 
-```{r Regressions1, message=FALSE, warning=FALSE, include=FALSE}
-
+```{r Text Output Regressions full sample, message=FALSE, warning=FALSE, include=FALSE}
 
 Regressions1 <- stargazer(R1, R2, R4, R3,
                 type="html",
@@ -201,19 +166,15 @@ Regressions1 <- stargazer(R1, R2, R4, R3,
                                    "log(International Rate)",
                                    "Reserve Ratio","Sovereign Debt Ratio",
                                    "Private Debt Ratio"),
-                out="Outputs/Self_Insurance_Table1.html",
+                out="outputs/Self_Insurance_Table1.html",
                 title="Elasticities of emerging market spreads to reserves and debt stocks: full sample",
                 no.space=FALSE,
                 digits=3,
                 align=TRUE)
-      
-
-
 ```
 
 
-```{r Regressions2, message=FALSE, warning=FALSE, include=FALSE}
-
+```{r Text Output Regressions before GFC, message=FALSE, warning=FALSE, include=FALSE}
 
 Regressions2 <- stargazer(R5, R7, R6,
                 type="html",
@@ -222,19 +183,15 @@ Regressions2 <- stargazer(R5, R7, R6,
                                    "log(International Rate)",
                                    "Reserve Ratio","Sovereign Debt Ratio",
                                    "Private Debt Ratio"),
-                out="Outputs/Self_Insurance_Table2.html",
+                out="outputs/Self_Insurance_Table2.html",
                 title="Elasticities of emerging market spreads to reserves and debt stocks: Before International Financial Crisis",
                 no.space=FALSE,
                 digits=3,
                 align=TRUE)
-
-
-
 ```
 
 
-```{r Regressions3, message=FALSE, warning=FALSE, include=FALSE}
-
+```{r Text Output Regressions after GFC, message=FALSE, warning=FALSE, include=FALSE}
 
 Regressions3 <- stargazer(R8, R10, R9,
                 type="html",
@@ -243,23 +200,16 @@ Regressions3 <- stargazer(R8, R10, R9,
                                    "log(International Rate)",
                                    "Reserve Ratio","Sovereign Debt Ratio",
                                    "Private Debt Ratio"),
-                out="Outputs/Self_Insurance_Table3.html",
+                out="outputs/Self_Insurance_Table3.html",
                 title="Elasticities of emerging market spreads to reserves and debt stocks: After International Financial Crisis",
                 no.space=FALSE,
                 digits=3,
                 align=TRUE)
-
-
-
 ```
 
 
 ```{r wald test, include=FALSE}
 
-# 
-# 
-#   
-  
 test1 <- as.data.frame(t(round(waldtest(R1, ~PuD_Y - R_Y)[1:2],6)))
 test2 <- as.data.frame(t(round(waldtest(R2, ~PuD_Y - R_Y)[1:2],6)))
 test3 <- as.data.frame(t(round(waldtest(R3, ~PuD_Y - R_Y)[1:2],6)))
@@ -270,7 +220,6 @@ test7 <- as.data.frame(t(round(waldtest(R7, ~PuD_Y - R_Y)[1:2],6)))
 test8 <- as.data.frame(t(round(waldtest(R8, ~PuD_Y - R_Y)[1:2],6)))
 test9 <- as.data.frame(t(round(waldtest(R9, ~PuD_Y - R_Y)[1:2],6)))
 test10<- as.data.frame(t(round(waldtest(R10, ~PuD_Y - R_Y)[1:2],6)))
-
 
 coef_test <- rbind(test1, test2,test3, test4, test5, test6, test7, test8,test9, test10)
 
@@ -288,7 +237,6 @@ coef_names <- c("Full sample, Debt Public and Private",
 coef_test$model <- coef_names
 coef_test <- coef_test[c(3,1,2)]
 
-
 tabla_coef <- kable(coef_test,
       col.names = c("Regression Model", "p-value", "Chi2"),
       caption="Wald test for Public Debt and Reserves") %>%
@@ -305,7 +253,6 @@ print(tabla_coef)
 
 
 ```{r avplots, echo=FALSE}
-
 
 R1.test <- lm(lspread ~ lriskaversion + lrating + lus10y + R_Y + PuD_Y + PrD_Y + country_name_wb, data = clean_base)
 
@@ -339,10 +286,6 @@ avPlots(R7.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "Before IFC,
 avPlots(R8.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "After IFC, Debt Public and Private")
 avPlots(R9.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "After IFC, Effect on Rating")
 avPlots(R10.test, terms = ~ R_Y + PuD_Y + PrD_Y, col = "red", main = "After IFC, without Rating")
-
-
-
-
 
 ```
 

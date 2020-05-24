@@ -75,4 +75,4 @@ write_csv2(x    = base3,
            path = "raw_data/world_reserves.csv")
 
 rm(base2, base3, base5,oil.exporters,query2, query3, queryfilter2, queryfilter3, areas1, areas2, checkquery , databaseID, indicator, startdate, enddate)
-print("reservas mundiales ok!")
+print("World Reserves ok!")

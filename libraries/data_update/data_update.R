@@ -4,6 +4,9 @@
 
 #  RUN ALL LINES
 
+#Creation of raw_data folder
+if (!file.exists(file.path("raw_data"))){dir.create(file.path("raw_data"))}
+
 #Countries
 source("libraries/data_update/S_COUNTRIES2.R")
 

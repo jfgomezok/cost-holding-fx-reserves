@@ -28,6 +28,7 @@ JSON <- fromJSON(Response, flatten = TRUE) %>%
 US10y.fred <- JSON %>%
   select(observations.date, observations.value) %>%
   set_names(c('date', 'value')) %>%
+  slice(-nrow(.)) %>% 
   mutate(date = parse_date(date),
          value = as.numeric(value))
 

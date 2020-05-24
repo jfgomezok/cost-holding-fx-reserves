@@ -6,13 +6,17 @@
 
 
 
+#Creation of output folder
+if (!file.exists(file.path("outputs"))){dir.create(file.path("outputs"))}
+
+
 
 ######################################################################
 #-------- RESERVES AND FX --------------------------------------------
 ######################################################################
 
 
-#lectura de la data ifm
+# Reading IMF data
 my_df <- read_csv2("raw_data/Reserves_NER.csv") %>% as_tibble()
 # my_df$date <- as.Date(my_df$date)
 # str(my_df)
@@ -73,7 +77,7 @@ my_df <- my_df %>%
 ####################      CARRY CIP     ##############################
 ######################################################################
 
-implied.ndf <- read_csv2("Inputs/CIP.csv")   # BLOOMBERG!!
+implied.ndf <- read_csv2("inputs/CIP.csv")
 
 implied.ndf <- gather(implied.ndf, date, TNA, 3:172)
 colnames(implied.ndf) <- c("country.name","wbcode2","date","TNA.Carry")
@@ -122,7 +126,7 @@ colnames(US_tp)[2] <- "us_tp"
 #--------- G D P -----------------------------------------------------
 ######################################################################
 
-#lectura de la data fed st. louis
+# Reading St. Louis FED data
 gdp <- read_csv2("raw_data/GDP_Monthly.csv")
 # gdp$date <- as.Date(gdp$date)
 # str(gdp)
@@ -198,14 +202,14 @@ my_df <- my_df %>%
 
 
 
-write.csv2(my_df, file="Outputs/law_db.csv",
+write.csv2(my_df, file="outputs/law_db.csv",
            row.names = FALSE)
 
 write.dta(my_df,
-          file = "Outputs/law_db.dta",
+          file = "outputs/law_db.dta",
           convert.factors = "string")
 
 
-print("base actualizada ok!!")
+print("LAW Data Base ok!!")
 
 

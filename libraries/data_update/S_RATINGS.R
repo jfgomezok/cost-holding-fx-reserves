@@ -15,8 +15,12 @@ ratings <- as_tibble(spy_original) %>%
            set_names(c("date", "foreign_currency_rating", "local_currency_rating", "assessment")) %>%
            slice(-1) %>%
            select(date, foreign_currency_rating) %>%
-           mutate(country = NA) %>%
-           separate(foreign_currency_rating, c("A","B", "C"), sep = "/")
+           mutate(country = NA,
+                  country = as.character(country)) %>%
+           separate(col = foreign_currency_rating,
+                    into = c("A","B", "C"),
+                    sep = "/",
+                    fill = "right")
 
 
 ratings[1, 5] <- ratings[1, 2]
@@ -58,8 +62,6 @@ new_db <- tribble()
 for (i in countries_list){
   
   # i <- "Brazil"
-  
-  #Nota mental: le  agregue un mes para que me coincida con el excel de trabajo 
   
   #1st Step: take each country
   temp <- ratings %>%
@@ -115,9 +117,9 @@ for (i in countries_list){
 
 # unique(new_db$rating)
 
-RatingMap <- data.frame(
-  "rating"=c("AAA","AAA-",  "AA+",  "AA","AA-", "A+",  "A","A-",  "BBB+",  "BBB","BBB-",  "BB+",  "BB","BB-",  "B+",  "B","B-",  "CCC+",  "CCC","CCC-",  "CC+", "CC","CC-",  "C+", " C","C-",  "SD","D","NR"),
-  "rating_equiv"=c(29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1)
+RatingMap <- tibble(
+  rating = c("AAA","AAA-",  "AA+",  "AA","AA-", "A+",  "A","A-",  "BBB+",  "BBB","BBB-",  "BB+",  "BB","BB-",  "B+",  "B","B-",  "CCC+",  "CCC","CCC-",  "CC+", "CC","CC-",  "C+", " C","C-",  "SD","D","NR"),
+  rating_equiv = c(29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1)
   )
 
 
@@ -133,8 +135,9 @@ new_db2 <- na.omit(new_db2)
 # ---- COUNTRY NAMES -------------------------------
 ####################################################
 
-
+suppressMessages(
 spy_equiv <- read_csv2("inputs/spy_country_equiv.csv")
+)
 
 new_db3 <- merge(new_db2, spy_equiv, by="country")
 

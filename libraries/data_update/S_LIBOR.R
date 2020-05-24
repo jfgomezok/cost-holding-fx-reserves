@@ -27,6 +27,7 @@ JSON <- fromJSON(Response, flatten = TRUE) %>%
 libor <- JSON %>%
   select(observations.date, observations.value) %>%
   set_names(c('date', 'libor.TNA')) %>%
+  filter(libor.TNA != ".") %>% 
   mutate(date = parse_date(date),
          libor.TNA = as.numeric(libor.TNA))
 
