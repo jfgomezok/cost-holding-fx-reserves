@@ -1,15 +1,18 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Cost of Holding Foreign Exchange Reserves
+# The Cost of Holding Foreign Exchange Reserves
 
 ## Overview
 
-Replication files for ‘Cost of Holding Foreign Exchange Reserves’ by
-Eduardo Levy Yeyati and Juan Francisco Gomez, CID Faculty Working Paper
-Series No. 353, May 2019, Harvard.
+Replication files for ‘The Cost of Holding Foreign Exchange Reserves’ by
+Eduardo Levy-Yeyati and Juan Francisco Gomez, chapter 6 of “Asset
+Management at Central Banks and Monetary Authorities” edited by Jacob
+Bjorheim, published by Springer. Available at:
+<https://www.springer.com/us/book/9783030434564>
 
-Available at:
+Working paper: CID Faculty Working Paper Series No. 353, May 2019,
+Harvard. Available at:
 <https://www.hks.harvard.edu/centers/cid/publications/faculty-working-papers/holding-exchange-reserves>
 
 ## Installing this repository:
@@ -54,9 +57,8 @@ cost-holding-fx-reserves.Rproj).
 
 ## Contributing
 
-Comments are very welcome, usual disclaimers apply. This package is
-still under development, so play nice.
+Comments are very welcome, usual disclaimers apply.
 
-### Author/Maintainer
+## Author & Maintainer
 
   - [Juan Francisco Gomez](https://github.com/jfgomezok)

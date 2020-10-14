@@ -14,13 +14,13 @@ knitr::opts_chunk$set(
 options(tibble.print_min = 5, tibble.print_max = 5)
 ```
 
-# Cost of Holding Foreign Exchange Reserves
+# The Cost of Holding Foreign Exchange Reserves
 
 ## Overview
 
-Replication files for 'Cost of Holding Foreign Exchange Reserves' by Eduardo Levy Yeyati and Juan Francisco Gomez, CID Faculty Working Paper Series No. 353, May 2019, Harvard.
+Replication files for 'The Cost of Holding Foreign Exchange Reserves' by Eduardo Levy-Yeyati and Juan Francisco Gomez, published as chapter 6 of "Asset Management at Central Banks and Monetary Authorities" edited by Jacob Bjorheim. Available at: https://www.springer.com/us/book/9783030434564
 
-Available at: https://www.hks.harvard.edu/centers/cid/publications/faculty-working-papers/holding-exchange-reserves
+Working paper: CID Faculty Working Paper Series No. 353, May 2019, Harvard. Available at: https://www.hks.harvard.edu/centers/cid/publications/faculty-working-papers/holding-exchange-reserves
 
 
 ## Installing this repository:
@@ -48,7 +48,7 @@ Non-Git users will probably find it easier to download the zip file by clicking 
    - self_insurance_db.csv is the section 3 data base ('DB').
    - law_db.csv is the section 4 DB.
 
-2. `Exploratory_Data_Analysis.Rmd` explores the data through tables and plots.
+2. `Exploratory_Data_Analysis.Rmd` explores the data.
   
 3. `Self_Insurance_Regressions.Rmd` loads the section 3 DB and performs the regressions.
 
@@ -58,8 +58,7 @@ Non-Git users will probably find it easier to download the zip file by clicking 
 
 ## Contributing
 Comments are very welcome, usual disclaimers apply.
-This package is still under development, so play nice.
 
 
-### Author/Maintainer
+## Author & Maintainer
 - [Juan Francisco Gomez](https://github.com/jfgomezok)
